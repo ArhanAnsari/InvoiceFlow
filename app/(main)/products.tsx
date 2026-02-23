@@ -22,6 +22,7 @@ import {
 export default function ProductsScreen() {
   const bgColor = useThemeColor({}, "background");
   const textColor = useThemeColor({}, "text");
+  const textSecondaryColor = useThemeColor({}, "textSecondary");
   const isDark = bgColor !== "#fff";
 
   const { products, fetchProducts, addProduct, isLoading } = useProductStore();
@@ -111,7 +112,7 @@ export default function ProductsScreen() {
           <Text style={[styles.emptyTitle, { color: textColor }]}>
             No Products Yet
           </Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptySubtitle, { color: textSecondaryColor }]}>
             Add items to your inventory to quickly add them to invoices.
           </Text>
         </View>

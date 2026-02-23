@@ -16,12 +16,13 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
 
 export default function CustomersScreen() {
   const bgColor = useThemeColor({}, "background");
   const textColor = useThemeColor({}, "text");
+  const textSecondaryColor = useThemeColor({}, "textSecondary");
   const isDark = bgColor !== "#fff";
 
   const { customers, fetchCustomers, addCustomer, isLoading } =
@@ -79,7 +80,9 @@ export default function CustomersScreen() {
             {item.name}
           </Text>
           {item.phone ? (
-            <Text style={styles.customerPhone}>{item.phone}</Text>
+            <Text style={[styles.customerPhone, { color: textSecondaryColor }]}>
+              {item.phone}
+            </Text>
           ) : null}
         </View>
         {item.syncStatus === "pending" && (
@@ -118,7 +121,7 @@ export default function CustomersScreen() {
           <Text style={[styles.emptyTitle, { color: textColor }]}>
             No Customers Yet
           </Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptySubtitle, { color: textSecondaryColor }]}>
             Add your first customer to start creating invoices for them.
           </Text>
         </View>

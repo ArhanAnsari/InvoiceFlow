@@ -1,4 +1,3 @@
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { ThemedButton } from "@/src/components/ThemedButton";
 import { ThemedInput } from "@/src/components/ThemedInput";
 import { account, ID } from "@/src/services/appwrite";
@@ -6,13 +5,13 @@ import { useAuthStore } from "@/src/store/authStore";
 import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 export default function SignupScreen() {
@@ -22,8 +21,9 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { checkSession } = useAuthStore();
-  const bgColor = useThemeColor({}, "background");
-  const textColor = useThemeColor({}, "text");
+  const bgColor = "#151718"; // Hardcoded dark background
+  const textColor = "#ECEDEE"; // Hardcoded light text
+  const textSecondaryColor = "#9BA1A6"; // Hardcoded secondary text
 
   const handleSignup = async () => {
     if (!email || !password || !name) {
@@ -36,6 +36,7 @@ export default function SignupScreen() {
       await account.create(ID.unique(), email, password, name);
       await account.createEmailPasswordSession(email, password);
       await checkSession();
+      router.replace("/(main)"); // Explicit redirect
     } catch (error: any) {
       Alert.alert("Signup Failed", error.message);
     } finally {
@@ -56,7 +57,9 @@ export default function SignupScreen() {
           <Text style={[styles.title, { color: textColor }]}>
             Create Account
           </Text>
-          <Text style={styles.subtitle}>Start billing with InvoiceFlow</Text>
+          <Text style={[styles.subtitle, { color: textSecondaryColor }]}>
+            Start billing with InvoiceFlow
+          </Text>
         </View>
 
         <View style={styles.form}>
@@ -89,9 +92,11 @@ export default function SignupScreen() {
           />
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={[styles.footerText, { color: textSecondaryColor }]}>
+              Already have an account?{" "}
+            </Text>
             <Link href="/(auth)/login" asChild>
-              <Text style={styles.linkText}>Sign In</Text>
+              <Text style={[styles.linkText]}>Sign In</Text>
             </Link>
           </View>
         </View>
@@ -120,7 +125,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
   },
   form: {
     width: "100%",
@@ -131,7 +135,6 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   footerText: {
-    color: "#666",
     fontSize: 15,
   },
   linkText: {

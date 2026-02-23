@@ -25,7 +25,7 @@ export function ThemedButton({
   const primaryColor = useThemeColor({}, "tint");
 
   let backgroundColor = primaryColor;
-  let textColor = "#fff";
+  let textColor = "#000000";
   let borderWidth = 0;
 
   if (variant === "outline") {

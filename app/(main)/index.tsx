@@ -24,6 +24,7 @@ export default function HomeScreen() {
   const [address, setAddress] = useState("");
 
   const textColor = useThemeColor({}, "text");
+  const textSecondaryColor = useThemeColor({}, "textSecondary");
   const bgColor = useThemeColor({}, "background");
   const isDark = bgColor !== "#fff";
 
@@ -56,7 +57,7 @@ export default function HomeScreen() {
             <Text style={[styles.setupTitle, { color: textColor }]}>
               Welcome, {user?.name?.split(" ")[0]}
             </Text>
-            <Text style={styles.setupSubtitle}>
+            <Text style={[styles.setupSubtitle, { color: textSecondaryColor }]}>
               Let's set up your business profile to start creating invoices.
             </Text>
           </View>
@@ -106,7 +107,7 @@ export default function HomeScreen() {
             <Text style={[styles.bizName, { color: textColor }]}>
               {currentBusiness.name}
             </Text>
-            <Text style={styles.bizGstin}>
+            <Text style={[styles.bizGstin, { color: textSecondaryColor }]}>
               {currentBusiness.gstin
                 ? `GSTIN: ${currentBusiness.gstin}`
                 : "No GSTIN Added"}
@@ -133,7 +134,9 @@ export default function HomeScreen() {
                 color="#0a7ea4"
               />
             </View>
-            <Text style={styles.statLabel}>Today's Sales</Text>
+            <Text style={[styles.statLabel, { color: textSecondaryColor }]}>
+              Today's Sales
+            </Text>
             <Text style={[styles.statValue, { color: textColor }]}>₹0</Text>
           </View>
           <View
@@ -150,7 +153,9 @@ export default function HomeScreen() {
             >
               <IconSymbol name="doc.text.fill" size={24} color="#34c759" />
             </View>
-            <Text style={styles.statLabel}>All Invoices</Text>
+            <Text style={[styles.statLabel, { color: textSecondaryColor }]}>
+              All Invoices
+            </Text>
             <Text style={[styles.statValue, { color: textColor }]}>0</Text>
           </View>
         </View>

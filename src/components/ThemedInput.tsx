@@ -1,10 +1,10 @@
 import { useThemeColor } from "@/hooks/use-theme-color";
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    TextInputProps,
-    View,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  View,
 } from "react-native";
 
 interface Props extends TextInputProps {
@@ -12,9 +12,21 @@ interface Props extends TextInputProps {
 }
 
 export function ThemedInput({ label, style, ...props }: Props) {
-  const backgroundColor = useThemeColor({}, "background");
   const textColor = useThemeColor({}, "text");
-  const isDark = backgroundColor !== "#fff";
+  const placeholderColor = useThemeColor(
+    {
+      light: "#9BA1A6",
+      dark: "#9BA1A6", // Light gray for dark mode
+    },
+    "textSecondary",
+  );
+  const inputBackground = useThemeColor(
+    {
+      light: "#F0F0F0",
+      dark: "#232627", // Slightly lighter than background
+    },
+    "background",
+  );
 
   return (
     <View style={styles.container}>
@@ -24,7 +36,7 @@ export function ThemedInput({ label, style, ...props }: Props) {
       <View
         style={[
           styles.inputContainer,
-          { backgroundColor: isDark ? "#1e1e1e" : "#f8f9fa" },
+          { backgroundColor: inputBackground },
           props.multiline && styles.multilineContainer,
         ]}
       >
@@ -35,7 +47,7 @@ export function ThemedInput({ label, style, ...props }: Props) {
             style,
             props.multiline && styles.multilineInput,
           ]}
-          placeholderTextColor="#999"
+          placeholderTextColor={placeholderColor}
           {...props}
         />
       </View>
