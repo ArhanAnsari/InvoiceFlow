@@ -1,10 +1,7 @@
 // src/services/sync.ts
 import NetInfo from "@react-native-community/netinfo";
 import { COLLECTIONS, databases, DB_ID, Query } from "./appwrite";
-import db, {
-    cleanupSyncQueue,
-    getSyncQueue
-} from "./database";
+import db, { cleanupSyncQueue, getSyncQueue } from "./database";
 
 export const syncService = {
   // 1. PUSH: Send local offline changes to Appwrite
@@ -72,8 +69,9 @@ export const syncService = {
         // Upsert into local SQLite
         await db.runAsync(
           `INSERT OR REPLACE INTO customers 
-                    ($id, businessId, name, phone, email, address, balance, $createdAt, $updatedAt, isSynced) 
+                    ("$id", businessId, name, phone, email, address, balance, "$createdAt", "$updatedAt", isSynced) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+
           [
             doc.$id,
             doc.businessId,
@@ -98,7 +96,7 @@ export const syncService = {
       for (const doc of products.documents) {
         await db.runAsync(
           `INSERT OR REPLACE INTO products
-                     ($id, businessId, name, price, stock, taxRate, unit, sku, $createdAt, $updatedAt, isSynced)
+                     ("$id", businessId, name, price, stock, taxRate, unit, sku, "$createdAt", "$updatedAt", isSynced)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
           [
             doc.$id,

@@ -11,34 +11,34 @@ export const initDatabase = () => {
       
       -- Businesses Table
       CREATE TABLE IF NOT EXISTS businesses (
-        $id TEXT PRIMARY KEY,
+        "$id" TEXT PRIMARY KEY,
         ownerId TEXT NOT NULL,
         name TEXT NOT NULL,
         gstin TEXT,
         address TEXT,
         logoFileId TEXT,
         planType TEXT DEFAULT 'free',
-        $createdAt TEXT,
-        $updatedAt TEXT
+        "$createdAt" TEXT,
+        "$updatedAt" TEXT
       );
 
       -- Customers Table
       CREATE TABLE IF NOT EXISTS customers (
-        $id TEXT PRIMARY KEY,
+        "$id" TEXT PRIMARY KEY,
         businessId TEXT NOT NULL,
         name TEXT NOT NULL,
         phone TEXT,
         email TEXT,
         address TEXT,
         balance REAL DEFAULT 0,
-        $createdAt TEXT,
-        $updatedAt TEXT,
+        "$createdAt" TEXT,
+        "$updatedAt" TEXT,
         isSynced INTEGER DEFAULT 1
       );
 
       -- Products Table
       CREATE TABLE IF NOT EXISTS products (
-        $id TEXT PRIMARY KEY,
+        "$id" TEXT PRIMARY KEY,
         businessId TEXT NOT NULL,
         name TEXT NOT NULL,
         price REAL NOT NULL,
@@ -46,14 +46,14 @@ export const initDatabase = () => {
         taxRate REAL DEFAULT 0,
         unit TEXT,
         sku TEXT,
-        $createdAt TEXT,
-        $updatedAt TEXT,
+        "$createdAt" TEXT,
+        "$updatedAt" TEXT,
         isSynced INTEGER DEFAULT 1
       );
 
       -- Invoices Table
       CREATE TABLE IF NOT EXISTS invoices (
-        $id TEXT PRIMARY KEY,
+        "$id" TEXT PRIMARY KEY,
         businessId TEXT NOT NULL,
         customerId TEXT NOT NULL,
         customerName TEXT NOT NULL,
@@ -63,8 +63,8 @@ export const initDatabase = () => {
         status TEXT DEFAULT 'unpaid',
         items TEXT, -- JSON String
         pdfUrl TEXT,
-        $createdAt TEXT,
-        $updatedAt TEXT,
+        "$createdAt" TEXT,
+        "$updatedAt" TEXT,
         isSynced INTEGER DEFAULT 1
       );
 
