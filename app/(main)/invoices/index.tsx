@@ -135,7 +135,12 @@ export default function InvoicesScreen() {
             onRefresh={load}
             renderItem={({ item }) => (
               <Pressable
-                onPress={() => router.push({ pathname: "/(main)/invoices/[id]", params: { id: item.$id } })}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(main)/invoices/[id]",
+                    params: { id: item.$id },
+                  })
+                }
               >
                 <GlassCard dark={isDark} noPadding style={styles.card}>
                   <View style={styles.row}>

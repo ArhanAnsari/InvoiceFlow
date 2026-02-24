@@ -20,7 +20,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View
+  View,
 } from "react-native";
 
 function formatCurrency(amount: number, symbol = "\u20b9") {
@@ -121,7 +121,10 @@ export default function DashboardScreen() {
               <Text style={styles.greeting}>Good morning,</Text>
               <Text style={styles.name}>{firstName} ??</Text>
             </View>
-            <Pressable onPress={() => router.push("/(main)/more" as any)} hitSlop={8}>
+            <Pressable
+              onPress={() => router.push("/(main)/more" as any)}
+              hitSlop={8}
+            >
               <Avatar name={user?.name} size={44} />
             </Pressable>
           </View>
@@ -239,7 +242,12 @@ export default function DashboardScreen() {
             recentInvoices.map((invoice: any) => (
               <Pressable
                 key={invoice.$id}
-                onPress={() => router.push({ pathname: "/(main)/invoices/[id]" as any, params: { id: invoice.$id } })}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(main)/invoices/[id]" as any,
+                    params: { id: invoice.$id },
+                  })
+                }
               >
                 <GlassCard dark={isDark} style={styles.invoiceRow} noPadding>
                   <View style={styles.invoiceInner}>
