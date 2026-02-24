@@ -1,332 +1,305 @@
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useThemeColor } from "@/hooks/use-theme-color";
-import { ThemedButton } from "@/src/components/ThemedButton";
+import { Colors, Radius, Spacing, Typography } from "@/constants/theme";
+import { useIsDark, useTheme } from "@/hooks/use-theme";
 import { ThemedInput } from "@/src/components/ThemedInput";
+import { Avatar } from "@/src/components/ui/Avatar";
+import { EmptyState } from "@/src/components/ui/EmptyState";
+import { GlassCard } from "@/src/components/ui/GlassCard";
+import { PrimaryButton } from "@/src/components/ui/PrimaryButton";
+import { SearchBar } from "@/src/components/ui/SearchBar";
 import { useBusinessStore } from "@/src/store/businessStore";
 import { useCustomerStore } from "@/src/store/customerStore";
-import { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
     FlatList,
     KeyboardAvoidingView,
     Modal,
     Platform,
+    Pressable,
     SafeAreaView,
-    ScrollView,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
 } from "react-native";
 
 export default function CustomersScreen() {
-  const bgColor = useThemeColor({}, "background");
-  const textColor = useThemeColor({}, "text");
-  const textSecondaryColor = useThemeColor({}, "textSecondary");
-  const isDark = bgColor !== "#fff";
-
+  const T = useTheme();
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(T), [T]);
   const { customers, fetchCustomers, addCustomer, isLoading } =
-    useCustomerStore();
+    useCustomerStore() as any;
   const { currentBusiness } = useBusinessStore();
 
-  const [isModalVisible, setModalVisible] = useState(false);
+  const [query, setQuery] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // Form fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [gstin, setGstin] = useState("");
 
+  const load = useCallback(() => {
+    if (currentBusiness?.$id) fetchCustomers(currentBusiness.$id);
+  }, [currentBusiness]);
+
   useEffect(() => {
-    if (currentBusiness?.$id) {
-      fetchCustomers(currentBusiness.$id);
-    }
-  }, [currentBusiness?.$id]);
+    load();
+  }, [currentBusiness]);
 
-  const handleAddCustomer = async () => {
-    if (!name.trim() || !currentBusiness?.$id) return;
+  const filtered = (customers ?? []).filter(
+    (c: any) =>
+      !query ||
+      c.name.toLowerCase().includes(query.toLowerCase()) ||
+      c.phone?.includes(query) ||
+      c.email?.toLowerCase().includes(query.toLowerCase()),
+  );
 
-    await addCustomer({
-      name,
-      email,
-      phone,
-      address,
-      gstin,
-      businessId: currentBusiness.$id,
-    });
-
-    setModalVisible(false);
+  const resetForm = () => {
     setName("");
     setEmail("");
     setPhone("");
     setAddress("");
     setGstin("");
   };
+  const closeModal = () => {
+    resetForm();
+    setModalVisible(false);
+  };
 
-  const renderCustomer = ({ item }: { item: any }) => (
-    <View
-      style={[
-        styles.customerCard,
-        { backgroundColor: isDark ? "#1e1e1e" : "#fff" },
-      ]}
-    >
-      <View style={styles.customerHeader}>
-        <View style={[styles.avatar, { backgroundColor: "#0a7ea420" }]}>
-          <Text style={styles.avatarText}>
-            {item.name.charAt(0).toUpperCase()}
-          </Text>
-        </View>
-        <View style={styles.customerInfo}>
-          <Text style={[styles.customerName, { color: textColor }]}>
-            {item.name}
-          </Text>
-          {item.phone ? (
-            <Text style={[styles.customerPhone, { color: textSecondaryColor }]}>
-              {item.phone}
-            </Text>
-          ) : null}
-        </View>
-        {item.syncStatus === "pending" && (
-          <IconSymbol
-            name="arrow.triangle.2.circlepath"
-            size={16}
-            color="#f59e0b"
-          />
-        )}
-      </View>
-    </View>
-  );
+  const handleAdd = async () => {
+    if (!name.trim()) return;
+    await addCustomer({
+      businessId: currentBusiness?.$id,
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      gstin: gstin.trim(),
+    });
+    closeModal();
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: bgColor }}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: textColor }]}>
-          Customers
-        </Text>
-      </View>
-
-      {isLoading && customers.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#0a7ea4" />
-        </View>
-      ) : customers.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View
-            style={[
-              styles.iconCircle,
-              { backgroundColor: isDark ? "#1e1e1e" : "#f8f9fa" },
-            ]}
-          >
-            <IconSymbol name="person.2.fill" size={48} color="#0a7ea4" />
+    <LinearGradient
+      colors={
+        isDark
+          ? ["#0D0F1E", "#131629", "#0D0F1E"]
+          : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
+      }
+      style={styles.root}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>Customers</Text>
+            <Text style={styles.subtitle}>{filtered.length} total</Text>
           </View>
-          <Text style={[styles.emptyTitle, { color: textColor }]}>
-            No Customers Yet
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: textSecondaryColor }]}>
-            Add your first customer to start creating invoices for them.
-          </Text>
+          <Pressable
+            style={styles.addBtn}
+            onPress={() => setModalVisible(true)}
+          >
+            <Ionicons name="add" size={24} color="#fff" />
+          </Pressable>
         </View>
-      ) : (
-        <FlatList
-          data={customers}
-          keyExtractor={(item) => item.$id}
-          renderItem={renderCustomer}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
 
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.8}
-        onPress={() => setModalVisible(true)}
-      >
-        <IconSymbol name="plus" size={24} color="#fff" />
-      </TouchableOpacity>
+        <View style={styles.searchWrap}>
+          <SearchBar
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search customers�"
+            dark={isDark}
+          />
+        </View>
 
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <KeyboardAvoidingView
-          style={{ flex: 1, backgroundColor: bgColor }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={
+              <Ionicons name="people-outline" size={56} color={T.textMuted} />
+            }
+            title={query ? "No results found" : "No customers yet"}
+            subtitle={
+              query
+                ? "Try a different search term."
+                : "Add your first customer to get started."
+            }
+            ctaLabel={query ? undefined : "Add Customer"}
+            onCta={query ? undefined : () => setModalVisible(true)}
+            dark={isDark}
+          />
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item.$id}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+            refreshing={isLoading}
+            onRefresh={load}
+            renderItem={({ item }) => (
+              <GlassCard dark={isDark} noPadding style={styles.card}>
+                <View style={styles.row}>
+                  <Avatar name={item.name} size={44} />
+                  <View style={styles.info}>
+                    <Text style={styles.customerName}>{item.name}</Text>
+                    {item.phone ? (
+                      <Text style={styles.meta}>
+                        <Ionicons
+                          name="call-outline"
+                          size={12}
+                          color={T.textMuted}
+                        />{" "}
+                        {item.phone}
+                      </Text>
+                    ) : null}
+                    {item.email ? (
+                      <Text style={styles.meta}>
+                        <Ionicons
+                          name="mail-outline"
+                          size={12}
+                          color={T.textMuted}
+                        />{" "}
+                        {item.email}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={styles.balanceCol}>
+                    {item.balance > 0 ? (
+                      <>
+                        <Text style={styles.balanceLabel}>Balance</Text>
+                        <Text style={[styles.balance, { color: T.danger }]}>
+                          ?{item.balance.toLocaleString()}
+                        </Text>
+                      </>
+                    ) : (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={22}
+                        color={T.success}
+                      />
+                    )}
+                  </View>
+                </View>
+              </GlassCard>
+            )}
+          />
+        )}
+
+        {/* Add Customer Modal */}
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={closeModal}
         >
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: textColor }]}>
-              New Customer
-            </Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <IconSymbol name="xmark" size={24} color={textColor} />
-            </TouchableOpacity>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+              <GlassCard dark={isDark} style={styles.modalCard}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Add Customer</Text>
+                  <Pressable onPress={closeModal} hitSlop={10}>
+                    <Ionicons name="close" size={22} color={T.textMuted} />
+                  </Pressable>
+                </View>
+                <ThemedInput
+                  label="Name *"
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Customer name"
+                />
+                <ThemedInput
+                  label="Phone"
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="+91 98765 43210"
+                  keyboardType="phone-pad"
+                />
+                <ThemedInput
+                  label="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="email@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <ThemedInput
+                  label="GSTIN"
+                  value={gstin}
+                  onChangeText={setGstin}
+                  placeholder="22AAAAA0000A1Z5"
+                  autoCapitalize="characters"
+                />
+                <ThemedInput
+                  label="Address"
+                  value={address}
+                  onChangeText={setAddress}
+                  placeholder="Full address"
+                  multiline
+                  numberOfLines={2}
+                />
+                <PrimaryButton
+                  label={isLoading ? "Adding�" : "Add Customer"}
+                  onPress={handleAdd}
+                  isLoading={isLoading}
+                  size="lg"
+                  style={{ width: "100%" }}
+                />
+              </GlassCard>
+            </KeyboardAvoidingView>
           </View>
-
-          <ScrollView
-            style={styles.modalContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            <ThemedInput
-              placeholder="Customer Name *"
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-            />
-            <ThemedInput
-              placeholder="Phone Number"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-            />
-            <ThemedInput
-              placeholder="Email Address"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <ThemedInput
-              placeholder="Billing Address"
-              value={address}
-              onChangeText={setAddress}
-              multiline
-              numberOfLines={3}
-            />
-            <ThemedInput
-              placeholder="GSTIN (Optional)"
-              value={gstin}
-              onChangeText={setGstin}
-              autoCapitalize="characters"
-            />
-
-            <ThemedButton
-              title="Save Customer"
-              onPress={handleAddCustomer}
-              isLoading={isLoading}
-              style={styles.saveButton}
-            />
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Modal>
-    </SafeAreaView>
+        </Modal>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  listContent: {
-    padding: 24,
-    paddingBottom: 100,
-  },
-  customerCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  customerHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  avatarText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#0a7ea4",
-  },
-  customerInfo: {
-    flex: 1,
-  },
-  customerName: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  customerPhone: {
-    fontSize: 14,
-    color: "#666",
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-    paddingBottom: 100,
-  },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  fab: {
-    position: "absolute",
-    bottom: 100, // Above tab bar
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#0a7ea4",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#0a7ea4",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 24,
-    paddingTop: Platform.OS === "ios" ? 24 : 48,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  modalContent: {
-    padding: 24,
-  },
-  saveButton: {
-    marginTop: 24,
-    marginBottom: 48,
-  },
-});
+function createStyles(T: typeof Colors.dark) {
+  return StyleSheet.create({
+    root: { flex: 1 },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: Spacing.xl,
+      paddingTop: Spacing.xl,
+      marginBottom: Spacing.md,
+    },
+    title: { ...Typography.h2, color: T.text },
+    subtitle: { fontSize: 13, color: T.textMuted, marginTop: 2 },
+    addBtn: {
+      width: 44,
+      height: 44,
+      backgroundColor: T.primary,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    searchWrap: { paddingHorizontal: Spacing.xl, marginBottom: Spacing.md },
+    list: { paddingHorizontal: Spacing.xl, paddingBottom: 100 },
+    card: { marginBottom: 8 },
+    row: { flexDirection: "row", alignItems: "center", padding: 12, gap: 12 },
+    info: { flex: 1, gap: 3 },
+    customerName: { ...Typography.label, color: T.text, fontWeight: "600" },
+    meta: { fontSize: 12, color: T.textMuted },
+    balanceCol: { alignItems: "flex-end" },
+    balanceLabel: { fontSize: 10, color: T.textMuted, marginBottom: 2 },
+    balance: { fontSize: 14, fontWeight: "700" },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "flex-end",
+    },
+    modalCard: { margin: 12, borderRadius: Radius.xl },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: Spacing.xl,
+    },
+    modalTitle: { ...Typography.h3, color: T.text },
+  });
+}

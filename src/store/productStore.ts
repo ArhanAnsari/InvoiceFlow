@@ -1,4 +1,4 @@
-import { ID, Query } from "react-native-appwrite";
+import { ID, Query } from "appwrite";
 import { create } from "zustand";
 import { databases } from "../services/appwrite";
 import db, { addToSyncQueue } from "../services/database";
@@ -148,3 +148,4 @@ export const useProductStore = create<ProductState>((set, get) => ({
     // Implementation for delete
   },
 }));
+

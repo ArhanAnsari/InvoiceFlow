@@ -1,329 +1,344 @@
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useThemeColor } from "@/hooks/use-theme-color";
-import { ThemedButton } from "@/src/components/ThemedButton";
+import { Colors, Spacing, Typography } from "@/constants/theme";
+import { useIsDark, useTheme } from "@/hooks/use-theme";
 import { ThemedInput } from "@/src/components/ThemedInput";
+import { EmptyState } from "@/src/components/ui/EmptyState";
+import { GlassCard } from "@/src/components/ui/GlassCard";
+import { PrimaryButton } from "@/src/components/ui/PrimaryButton";
+import { SearchBar } from "@/src/components/ui/SearchBar";
 import { useBusinessStore } from "@/src/store/businessStore";
 import { useProductStore } from "@/src/store/productStore";
-import { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
     FlatList,
     KeyboardAvoidingView,
     Modal,
     Platform,
+    Pressable,
     SafeAreaView,
-    ScrollView,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
 } from "react-native";
 
 export default function ProductsScreen() {
-  const bgColor = useThemeColor({}, "background");
-  const textColor = useThemeColor({}, "text");
-  const textSecondaryColor = useThemeColor({}, "textSecondary");
-  const isDark = bgColor !== "#fff";
-
-  const { products, fetchProducts, addProduct, isLoading } = useProductStore();
+  const T = useTheme();
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(T), [T]);
+  const { products, fetchProducts, addProduct, isLoading } =
+    useProductStore() as any;
   const { currentBusiness } = useBusinessStore();
 
-  const [isModalVisible, setModalVisible] = useState(false);
+  const [query, setQuery] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [taxRate, setTaxRate] = useState("18");
+  const [unit, setUnit] = useState("pcs");
+  const [stock, setStock] = useState("0");
+  const [description, setDescription] = useState("");
   const [hsnCode, setHsnCode] = useState("");
-  const [taxRate, setTaxRate] = useState("");
+
+  const load = useCallback(() => {
+    if (currentBusiness?.$id) fetchProducts(currentBusiness.$id);
+  }, [currentBusiness]);
 
   useEffect(() => {
-    if (currentBusiness?.$id) {
-      fetchProducts(currentBusiness.$id);
-    }
-  }, [currentBusiness?.$id]);
+    load();
+  }, [currentBusiness]);
 
-  const handleAddProduct = async () => {
-    if (!name.trim() || !price.trim() || !currentBusiness?.$id) return;
-
-    await addProduct({
-      name,
-      description,
-      price: parseFloat(price) || 0,
-      hsnCode,
-      taxRate: parseFloat(taxRate) || 0,
-      businessId: currentBusiness.$id,
-    });
-
-    setModalVisible(false);
-    setName("");
-    setDescription("");
-    setPrice("");
-    setHsnCode("");
-    setTaxRate("");
-  };
-
-  const renderProduct = ({ item }: { item: any }) => (
-    <View
-      style={[
-        styles.productCard,
-        { backgroundColor: isDark ? "#1e1e1e" : "#fff" },
-      ]}
-    >
-      <View style={styles.productHeader}>
-        <View style={[styles.iconBox, { backgroundColor: "#0a7ea420" }]}>
-          <IconSymbol name="cube.box.fill" size={24} color="#0a7ea4" />
-        </View>
-        <View style={styles.productInfo}>
-          <Text style={[styles.productName, { color: textColor }]}>
-            {item.name}
-          </Text>
-          <Text style={styles.productPrice}>₹{item.price.toFixed(2)}</Text>
-        </View>
-        {item.syncStatus === "pending" && (
-          <IconSymbol
-            name="arrow.triangle.2.circlepath"
-            size={16}
-            color="#f59e0b"
-          />
-        )}
-      </View>
-    </View>
+  const filtered = (products ?? []).filter(
+    (p: any) =>
+      !query ||
+      p.name.toLowerCase().includes(query.toLowerCase()) ||
+      p.sku?.includes(query),
   );
 
+  const resetForm = () => {
+    setName("");
+    setPrice("");
+    setTaxRate("18");
+    setUnit("pcs");
+    setStock("0");
+    setDescription("");
+    setHsnCode("");
+  };
+  const closeModal = () => {
+    resetForm();
+    setModalVisible(false);
+  };
+
+  const handleAdd = async () => {
+    if (!name.trim() || !price.trim()) return;
+    await addProduct({
+      businessId: currentBusiness?.$id,
+      name: name.trim(),
+      price: parseFloat(price),
+      taxRate: parseFloat(taxRate) || 0,
+      unit: unit.trim() || "pcs",
+      stock: parseInt(stock) || 0,
+      description: description.trim(),
+      hsnCode: hsnCode.trim(),
+      isService: false,
+      isActive: true,
+    });
+    closeModal();
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: bgColor }}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: textColor }]}>Products</Text>
-      </View>
-
-      {isLoading && products.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#0a7ea4" />
-        </View>
-      ) : products.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View
-            style={[
-              styles.iconCircle,
-              { backgroundColor: isDark ? "#1e1e1e" : "#f8f9fa" },
-            ]}
-          >
-            <IconSymbol name="cart.fill" size={48} color="#0a7ea4" />
+    <LinearGradient
+      colors={
+        isDark
+          ? ["#0D0F1E", "#131629", "#0D0F1E"]
+          : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
+      }
+      style={styles.root}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>Products</Text>
+            <Text style={styles.subtitle}>{filtered.length} items</Text>
           </View>
-          <Text style={[styles.emptyTitle, { color: textColor }]}>
-            No Products Yet
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: textSecondaryColor }]}>
-            Add items to your inventory to quickly add them to invoices.
-          </Text>
+          <Pressable
+            style={styles.addBtn}
+            onPress={() => setModalVisible(true)}
+          >
+            <Ionicons name="add" size={24} color="#fff" />
+          </Pressable>
         </View>
-      ) : (
-        <FlatList
-          data={products}
-          keyExtractor={(item) => item.$id}
-          renderItem={renderProduct}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
 
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.8}
-        onPress={() => setModalVisible(true)}
-      >
-        <IconSymbol name="plus" size={24} color="#fff" />
-      </TouchableOpacity>
+        <View style={styles.searchWrap}>
+          <SearchBar
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search products�"
+            dark={isDark}
+          />
+        </View>
 
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <KeyboardAvoidingView
-          style={{ flex: 1, backgroundColor: bgColor }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={
+              <Ionicons name="cube-outline" size={56} color={T.textMuted} />
+            }
+            title={query ? "No results found" : "No products yet"}
+            subtitle={
+              query
+                ? "Try a different search."
+                : "Add your products or services to create invoices."
+            }
+            ctaLabel={query ? undefined : "Add Product"}
+            onCta={query ? undefined : () => setModalVisible(true)}
+            dark={isDark}
+          />
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item.$id}
+            contentContainerStyle={styles.list}
+            numColumns={2}
+            columnWrapperStyle={styles.columns}
+            showsVerticalScrollIndicator={false}
+            refreshing={isLoading}
+            onRefresh={load}
+            renderItem={({ item }) => (
+              <GlassCard dark={isDark} style={styles.productCard}>
+                <View style={styles.productIcon}>
+                  <Ionicons
+                    name={item.isService ? "briefcase-outline" : "cube-outline"}
+                    size={22}
+                    color={T.primary}
+                  />
+                </View>
+                <Text style={styles.productName} numberOfLines={2}>
+                  {item.name}
+                </Text>
+                <Text style={styles.productPrice}>
+                  ?{parseFloat(item.price).toLocaleString()}
+                </Text>
+                <View style={styles.productMeta}>
+                  <Text style={styles.productUnit}>{item.unit}</Text>
+                  <Text style={styles.productTax}>{item.taxRate}% GST</Text>
+                </View>
+                {!item.isService && (
+                  <View
+                    style={[
+                      styles.stockBadge,
+                      item.stock <= (item.lowStockThreshold ?? 5) &&
+                        styles.stockLow,
+                    ]}
+                  >
+                    <Text style={styles.stockText}>
+                      {item.stock <= (item.lowStockThreshold ?? 5) ? "? " : ""}
+                      {item.stock} {item.unit}
+                    </Text>
+                  </View>
+                )}
+              </GlassCard>
+            )}
+          />
+        )}
+
+        {/* Add Modal */}
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={closeModal}
         >
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: textColor }]}>
-              New Product
-            </Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <IconSymbol name="xmark" size={24} color={textColor} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            style={styles.modalContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            <ThemedInput
-              placeholder="Product Name *"
-              value={name}
-              onChangeText={setName}
-            />
-            <ThemedInput
-              placeholder="Price (₹) *"
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="decimal-pad"
-            />
-            <ThemedInput
-              placeholder="Description"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={3}
-            />
-            <View style={styles.row}>
-              <View style={styles.flex1}>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+              <GlassCard dark={isDark} style={styles.modalCard}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Add Product</Text>
+                  <Pressable onPress={closeModal} hitSlop={10}>
+                    <Ionicons name="close" size={22} color={T.textMuted} />
+                  </Pressable>
+                </View>
                 <ThemedInput
-                  placeholder="HSN/SAC Code"
+                  label="Product Name *"
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="e.g. Widget Pro"
+                />
+                <View style={{ flexDirection: "row", gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <ThemedInput
+                      label="Selling Price *"
+                      value={price}
+                      onChangeText={setPrice}
+                      placeholder="0.00"
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <ThemedInput
+                      label="Tax Rate %"
+                      value={taxRate}
+                      onChangeText={setTaxRate}
+                      placeholder="18"
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                </View>
+                <View style={{ flexDirection: "row", gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <ThemedInput
+                      label="Unit"
+                      value={unit}
+                      onChangeText={setUnit}
+                      placeholder="pcs"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <ThemedInput
+                      label="Stock"
+                      value={stock}
+                      onChangeText={setStock}
+                      placeholder="0"
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                </View>
+                <ThemedInput
+                  label="HSN Code"
                   value={hsnCode}
                   onChangeText={setHsnCode}
+                  placeholder="e.g. 8517"
                 />
-              </View>
-              <View style={{ width: 16 }} />
-              <View style={styles.flex1}>
-                <ThemedInput
-                  placeholder="Tax Rate (%)"
-                  value={taxRate}
-                  onChangeText={setTaxRate}
-                  keyboardType="decimal-pad"
+                <PrimaryButton
+                  label={isLoading ? "Adding�" : "Add Product"}
+                  onPress={handleAdd}
+                  isLoading={isLoading}
+                  size="lg"
+                  style={{ width: "100%" }}
                 />
-              </View>
-            </View>
-
-            <ThemedButton
-              title="Save Product"
-              onPress={handleAddProduct}
-              isLoading={isLoading}
-              style={styles.saveButton}
-            />
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Modal>
-    </SafeAreaView>
+              </GlassCard>
+            </KeyboardAvoidingView>
+          </View>
+        </Modal>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  listContent: {
-    padding: 24,
-    paddingBottom: 100,
-  },
-  productCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  productHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  productInfo: {
-    flex: 1,
-  },
-  productName: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  productPrice: {
-    fontSize: 16,
-    color: "#0a7ea4",
-    fontWeight: "bold",
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-    paddingBottom: 100,
-  },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  fab: {
-    position: "absolute",
-    bottom: 100, // Above tab bar
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#0a7ea4",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#0a7ea4",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 24,
-    paddingTop: Platform.OS === "ios" ? 24 : 48,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  modalContent: {
-    padding: 24,
-  },
-  row: {
-    flexDirection: "row",
-  },
-  flex1: {
-    flex: 1,
-  },
-  saveButton: {
-    marginTop: 24,
-    marginBottom: 48,
-  },
-});
+function createStyles(T: typeof Colors.dark) {
+  return StyleSheet.create({
+    root: { flex: 1 },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: Spacing.xl,
+      paddingTop: Spacing.xl,
+      marginBottom: Spacing.md,
+    },
+    title: { ...Typography.h2, color: T.text },
+    subtitle: { fontSize: 13, color: T.textMuted, marginTop: 2 },
+    addBtn: {
+      width: 44,
+      height: 44,
+      backgroundColor: T.primary,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    searchWrap: { paddingHorizontal: Spacing.xl, marginBottom: Spacing.md },
+    list: { paddingHorizontal: Spacing.xl, paddingBottom: 100 },
+    columns: { gap: 10, marginBottom: 10 },
+    productCard: { flex: 1, padding: 14, gap: 6 },
+    productIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: "rgba(99,102,241,0.15)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
+    },
+    productName: {
+      ...Typography.label,
+      color: T.text,
+      fontWeight: "600",
+      lineHeight: 18,
+    },
+    productPrice: { fontSize: 16, fontWeight: "700", color: T.primary },
+    productMeta: { flexDirection: "row", gap: 6 },
+    productUnit: {
+      fontSize: 11,
+      color: T.textMuted,
+      backgroundColor: T.background,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+    },
+    productTax: { fontSize: 11, color: T.textMuted },
+    stockBadge: {
+      backgroundColor: "rgba(16,185,129,0.15)",
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      alignSelf: "flex-start",
+    },
+    stockLow: { backgroundColor: "rgba(239,68,68,0.15)" },
+    stockText: { fontSize: 11, color: T.success, fontWeight: "600" },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "flex-end",
+    },
+    modalCard: { margin: 12 },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: Spacing.xl,
+    },
+    modalTitle: { ...Typography.h3, color: T.text },
+  });
+}

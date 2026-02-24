@@ -1,11 +1,11 @@
-import { ID, Query } from "react-native-appwrite";
+import { ID, Query } from "appwrite";
 import { create } from "zustand";
-import { databases } from "../services/appwrite";
+import { COLLECTIONS, databases, DB_ID } from "../services/appwrite";
 import db, { addToSyncQueue } from "../services/database";
 import { syncEngine } from "../services/sync";
 
-const DATABASE_ID = "invoiceflow_db";
-const INVOICES_COLLECTION_ID = "invoices";
+const DATABASE_ID = DB_ID;
+const INVOICES_COLLECTION_ID = COLLECTIONS.INVOICES;
 
 export interface InvoiceItem {
   productId: string;
