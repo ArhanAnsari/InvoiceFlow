@@ -1,0 +1,260 @@
+{
+  "projectId": "invoiceflow",
+  "projectName": "InvoiceFlow",
+  "databases": [
+    {
+      "$id": "invoiceflow_db",
+      "name": "InvoiceFlow DB",
+      "enabled": true,
+      "collections": [
+        {
+          "$id": "businesses",
+          "name": "Businesses",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "indexes": [
+            {
+              "key": "ownerId_idx",
+              "type": "key",
+              "attributes": ["ownerId"],
+              "orders": ["ASC"]
+            },
+            {
+              "key": "planType_idx",
+              "type": "key",
+              "attributes": ["planType"],
+              "orders": ["ASC"]
+            }
+          ]
+        },
+        {
+          "$id": "customers",
+          "name": "Customers",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "indexes": [
+            {
+              "key": "business_created_idx",
+              "type": "key",
+              "attributes": ["businessId", "createdAt"],
+              "orders": ["ASC", "DESC"]
+            },
+            {
+              "key": "name_ft_idx",
+              "type": "fulltext",
+              "attributes": ["name"]
+            },
+            {
+              "key": "phone_idx",
+              "type": "key",
+              "attributes": ["phone"],
+              "orders": ["ASC"]
+            }
+          ]
+        },
+        {
+          "$id": "products",
+          "name": "Products",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "indexes": [
+            {
+              "key": "business_created_idx",
+              "type": "key",
+              "attributes": ["businessId", "createdAt"],
+              "orders": ["ASC", "DESC"]
+            },
+            {
+              "key": "sku_unique_idx",
+              "type": "unique",
+              "attributes": ["sku"],
+              "orders": ["ASC"]
+            },
+            {
+              "key": "name_ft_idx",
+              "type": "fulltext",
+              "attributes": ["name"]
+            },
+            {
+              "key": "category_idx",
+              "type": "key",
+              "attributes": ["category"],
+              "orders": ["ASC"]
+            }
+          ]
+        },
+        {
+          "$id": "invoices",
+          "name": "Invoices",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "indexes": [
+            {
+              "key": "business_date_idx",
+              "type": "key",
+              "attributes": ["businessId", "date"],
+              "orders": ["ASC", "DESC"]
+            },
+            {
+              "key": "business_status_idx",
+              "type": "key",
+              "attributes": ["businessId", "status"],
+              "orders": ["ASC", "ASC"]
+            },
+            {
+              "key": "customer_date_idx",
+              "type": "key",
+              "attributes": ["customerId", "date"],
+              "orders": ["ASC", "DESC"]
+            },
+            {
+              "key": "business_invoice_unique_idx",
+              "type": "unique",
+              "attributes": ["businessId", "invoiceNumber"],
+              "orders": ["ASC", "ASC"]
+            }
+          ]
+        },
+        {
+          "$id": "invoice_items",
+          "name": "Invoice Items",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "indexes": [
+            {
+              "key": "invoiceId_idx",
+              "type": "key",
+              "attributes": ["invoiceId"],
+              "orders": ["ASC"]
+            },
+            {
+              "key": "productId_idx",
+              "type": "key",
+              "attributes": ["productId"],
+              "orders": ["ASC"]
+            },
+            {
+              "key": "businessId_idx",
+              "type": "key",
+              "attributes": ["businessId"],
+              "orders": ["ASC"]
+            }
+          ]
+        },
+        {
+          "$id": "subscriptions",
+          "name": "Subscriptions",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "indexes": [
+            {
+              "key": "userId_idx",
+              "type": "key",
+              "attributes": ["userId"],
+              "orders": ["ASC"]
+            },
+            {
+              "key": "businessId_unique_idx",
+              "type": "unique",
+              "attributes": ["businessId"],
+              "orders": ["ASC"]
+            },
+            {
+              "key": "status_idx",
+              "type": "key",
+              "attributes": ["status"],
+              "orders": ["ASC"]
+            },
+            {
+              "key": "endDate_idx",
+              "type": "key",
+              "attributes": ["endDate"],
+              "orders": ["ASC"]
+            }
+          ]
+        },
+        {
+          "$id": "staff_roles",
+          "name": "Staff Roles",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "indexes": [
+            {
+              "key": "business_user_unique_idx",
+              "type": "unique",
+              "attributes": ["businessId", "userId"],
+              "orders": ["ASC", "ASC"]
+            },
+            {
+              "key": "business_role_idx",
+              "type": "key",
+              "attributes": ["businessId", "role"],
+              "orders": ["ASC", "ASC"]
+            },
+            {
+              "key": "userId_idx",
+              "type": "key",
+              "attributes": ["userId"],
+              "orders": ["ASC"]
+            }
+          ]
+        },
+        {
+          "$id": "backups",
+          "name": "Backups",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "indexes": [
+            {
+              "key": "business_created_idx",
+              "type": "key",
+              "attributes": ["businessId", "createdAt"],
+              "orders": ["ASC", "DESC"]
+            },
+            {
+              "key": "status_idx",
+              "type": "key",
+              "attributes": ["status"],
+              "orders": ["ASC"]
+            }
+          ]
+        },
+        {
+          "$id": "notifications",
+          "name": "Notifications",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "indexes": [
+            {
+              "key": "user_read_created_idx",
+              "type": "key",
+              "attributes": ["userId", "isRead", "createdAt"],
+              "orders": ["ASC", "ASC", "DESC"]
+            },
+            {
+              "key": "business_created_idx",
+              "type": "key",
+              "attributes": ["businessId", "createdAt"],
+              "orders": ["ASC", "DESC"]
+            },
+            {
+              "key": "type_idx",
+              "type": "key",
+              "attributes": ["type"],
+              "orders": ["ASC"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

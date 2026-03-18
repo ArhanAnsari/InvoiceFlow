@@ -1,0 +1,1115 @@
+{
+  "projectId": "invoiceflow",
+  "projectName": "InvoiceFlow",
+  "databases": [
+    {
+      "$id": "invoiceflow_db",
+      "name": "InvoiceFlow DB",
+      "enabled": true,
+      "collections": [
+        {
+          "$id": "businesses",
+          "name": "Businesses",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "attributes": [
+            {
+              "key": "ownerId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "name",
+              "type": "string",
+              "size": 255,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "tagline",
+              "type": "string",
+              "size": 255,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "gstin",
+              "type": "string",
+              "size": 15,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "pan",
+              "type": "string",
+              "size": 10,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "address",
+              "type": "string",
+              "size": 1000,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "city",
+              "type": "string",
+              "size": 100,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "state",
+              "type": "string",
+              "size": 100,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "pincode",
+              "type": "string",
+              "size": 10,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "phone",
+              "type": "string",
+              "size": 20,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "email",
+              "type": "string",
+              "size": 255,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "website",
+              "type": "string",
+              "size": 255,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "logoFileId",
+              "type": "string",
+              "size": 36,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "signatureFileId",
+              "type": "string",
+              "size": 36,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "currency",
+              "type": "string",
+              "size": 5,
+              "required": true,
+              "default": "INR",
+              "array": false
+            },
+            {
+              "key": "currencySymbol",
+              "type": "string",
+              "size": 5,
+              "required": true,
+              "default": "Rs",
+              "array": false
+            },
+            {
+              "key": "planType",
+              "type": "string",
+              "size": 20,
+              "required": true,
+              "default": "free",
+              "array": false
+            },
+            {
+              "key": "planExpiresAt",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "invoicePrefix",
+              "type": "string",
+              "size": 20,
+              "required": true,
+              "default": "INV",
+              "array": false
+            },
+            {
+              "key": "invoiceCounter",
+              "type": "integer",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "taxType",
+              "type": "string",
+              "size": 10,
+              "required": true,
+              "default": "gst",
+              "array": false
+            },
+            {
+              "key": "isActive",
+              "type": "boolean",
+              "required": true,
+              "default": true,
+              "array": false
+            }
+          ],
+          "indexes": []
+        },
+        {
+          "$id": "customers",
+          "name": "Customers",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "attributes": [
+            {
+              "key": "businessId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "name",
+              "type": "string",
+              "size": 255,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "phone",
+              "type": "string",
+              "size": 20,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "email",
+              "type": "string",
+              "size": 255,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "gstin",
+              "type": "string",
+              "size": 15,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "address",
+              "type": "string",
+              "size": 1000,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "city",
+              "type": "string",
+              "size": 100,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "state",
+              "type": "string",
+              "size": 100,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "pincode",
+              "type": "string",
+              "size": 10,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "balance",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "totalPurchases",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "totalInvoices",
+              "type": "integer",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "tags",
+              "type": "string",
+              "size": 50,
+              "required": false,
+              "array": true
+            },
+            {
+              "key": "notes",
+              "type": "string",
+              "size": 2000,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "isActive",
+              "type": "boolean",
+              "required": true,
+              "default": true,
+              "array": false
+            },
+            {
+              "key": "createdAt",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "updatedAt",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            }
+          ],
+          "indexes": []
+        },
+        {
+          "$id": "products",
+          "name": "Products",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "attributes": [
+            {
+              "key": "businessId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "name",
+              "type": "string",
+              "size": 255,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "description",
+              "type": "string",
+              "size": 1000,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "sku",
+              "type": "string",
+              "size": 100,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "barcode",
+              "type": "string",
+              "size": 100,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "category",
+              "type": "string",
+              "size": 100,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "unit",
+              "type": "string",
+              "size": 50,
+              "required": true,
+              "default": "pcs",
+              "array": false
+            },
+            {
+              "key": "price",
+              "type": "float",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "costPrice",
+              "type": "float",
+              "required": false,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "mrp",
+              "type": "float",
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "taxRate",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "hsnCode",
+              "type": "string",
+              "size": 20,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "stock",
+              "type": "integer",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "lowStockThreshold",
+              "type": "integer",
+              "required": true,
+              "default": 5,
+              "array": false
+            },
+            {
+              "key": "imageFileId",
+              "type": "string",
+              "size": 36,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "isService",
+              "type": "boolean",
+              "required": true,
+              "default": false,
+              "array": false
+            },
+            {
+              "key": "isActive",
+              "type": "boolean",
+              "required": true,
+              "default": true,
+              "array": false
+            },
+            {
+              "key": "createdAt",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "updatedAt",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            }
+          ],
+          "indexes": []
+        },
+        {
+          "$id": "invoices",
+          "name": "Invoices",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "attributes": [
+            {
+              "key": "businessId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "customerId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "customerName",
+              "type": "string",
+              "size": 255,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "customerPhone",
+              "type": "string",
+              "size": 20,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "customerGstin",
+              "type": "string",
+              "size": 15,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "invoiceNumber",
+              "type": "string",
+              "size": 50,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "date",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "invoiceDate",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "dueDate",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "detailsJson",
+              "type": "string",
+              "size": 50000,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "items",
+              "type": "string",
+              "size": 50000,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "subTotal",
+              "type": "float",
+              "required": false,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "discountType",
+              "type": "string",
+              "size": 20,
+              "required": true,
+              "default": "none",
+              "array": false
+            },
+            {
+              "key": "discountValue",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "discountAmount",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "cgstAmount",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "sgstAmount",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "igstAmount",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "totalTax",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "totalAmount",
+              "type": "float",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "paidAmount",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "balanceDue",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "status",
+              "type": "string",
+              "size": 20,
+              "required": true,
+              "default": "unpaid",
+              "array": false
+            },
+            {
+              "key": "paymentMethod",
+              "type": "string",
+              "size": 30,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "paymentDate",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "notes",
+              "type": "string",
+              "size": 2000,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "termsConditions",
+              "type": "string",
+              "size": 5000,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "pdfFileId",
+              "type": "string",
+              "size": 36,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "isRecurring",
+              "type": "boolean",
+              "required": true,
+              "default": false,
+              "array": false
+            },
+            {
+              "key": "recurringInterval",
+              "type": "string",
+              "size": 20,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "staffId",
+              "type": "string",
+              "size": 36,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "ownerId",
+              "type": "string",
+              "size": 36,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "createdAt",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "updatedAt",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            }
+          ],
+          "indexes": []
+        },
+        {
+          "$id": "invoice_items",
+          "name": "Invoice Items",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "attributes": [
+            {
+              "key": "invoiceId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "businessId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "productId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "productName",
+              "type": "string",
+              "size": 255,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "hsnCode",
+              "type": "string",
+              "size": 20,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "quantity",
+              "type": "float",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "unit",
+              "type": "string",
+              "size": 50,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "price",
+              "type": "float",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "taxRate",
+              "type": "float",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "taxAmount",
+              "type": "float",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "totalPrice",
+              "type": "float",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "createdAt",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            }
+          ],
+          "indexes": []
+        },
+        {
+          "$id": "subscriptions",
+          "name": "Subscriptions",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "attributes": [
+            {
+              "key": "userId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "businessId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "planType",
+              "type": "string",
+              "size": 20,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "status",
+              "type": "string",
+              "size": 20,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "startDate",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "endDate",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "trialEndDate",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "platform",
+              "type": "string",
+              "size": 20,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "storeProductId",
+              "type": "string",
+              "size": 100,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "storeTransactionId",
+              "type": "string",
+              "size": 255,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "autoRenew",
+              "type": "boolean",
+              "required": true,
+              "default": true,
+              "array": false
+            },
+            {
+              "key": "cancelReason",
+              "type": "string",
+              "size": 500,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "createdAt",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "updatedAt",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            }
+          ],
+          "indexes": []
+        },
+        {
+          "$id": "staff_roles",
+          "name": "Staff Roles",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "attributes": [
+            {
+              "key": "businessId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "userId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "role",
+              "type": "string",
+              "size": 30,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "permissions",
+              "type": "string",
+              "size": 50,
+              "required": true,
+              "array": true
+            },
+            {
+              "key": "invitedByUserId",
+              "type": "string",
+              "size": 36,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "inviteEmail",
+              "type": "string",
+              "size": 255,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "inviteStatus",
+              "type": "string",
+              "size": 20,
+              "required": true,
+              "default": "pending",
+              "array": false
+            },
+            {
+              "key": "isActive",
+              "type": "boolean",
+              "required": true,
+              "default": true,
+              "array": false
+            },
+            {
+              "key": "createdAt",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "updatedAt",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            }
+          ],
+          "indexes": []
+        },
+        {
+          "$id": "backups",
+          "name": "Backups",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "attributes": [
+            {
+              "key": "businessId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "userId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "fileId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "fileName",
+              "type": "string",
+              "size": 255,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "fileSizeBytes",
+              "type": "integer",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "status",
+              "type": "string",
+              "size": 20,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "type",
+              "type": "string",
+              "size": 20,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "recordCounts",
+              "type": "string",
+              "size": 1000,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "createdAt",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "updatedAt",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            }
+          ],
+          "indexes": []
+        },
+        {
+          "$id": "notifications",
+          "name": "Notifications",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "attributes": [
+            {
+              "key": "userId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "businessId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "type",
+              "type": "string",
+              "size": 50,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "title",
+              "type": "string",
+              "size": 255,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "body",
+              "type": "string",
+              "size": 1000,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "data",
+              "type": "string",
+              "size": 2000,
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "isRead",
+              "type": "boolean",
+              "required": true,
+              "default": false,
+              "array": false
+            },
+            {
+              "key": "readAt",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            },
+            {
+              "key": "createdAt",
+              "type": "datetime",
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "updatedAt",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            }
+          ],
+          "indexes": []
+        }
+      ]
+    }
+  ]
+}

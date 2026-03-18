@@ -1,0 +1,2054 @@
+{
+    "projectId": "699988ac001cd0857f48",
+    "projectName": "InvoiceFlow",
+    "endpoint": "https://fra.cloud.appwrite.io/v1",
+    "settings": {
+        "services": {
+            "account": true,
+            "avatars": true,
+            "databases": true,
+            "locale": true,
+            "health": true,
+            "storage": true,
+            "teams": true,
+            "users": true,
+            "sites": true,
+            "functions": true,
+            "graphql": true,
+            "messaging": true
+        },
+        "auth": {
+            "methods": {
+                "jwt": true,
+                "phone": true,
+                "invites": true,
+                "anonymous": true,
+                "email-otp": true,
+                "magic-url": true,
+                "email-password": true
+            },
+            "security": {
+                "duration": 31536000,
+                "limit": 0,
+                "sessionsLimit": 10,
+                "passwordHistory": 0,
+                "passwordDictionary": false,
+                "personalDataCheck": false,
+                "sessionAlerts": false,
+                "mockNumbers": []
+            }
+        }
+    },
+    "databases": [
+        {
+            "$id": "invoiceflow_db",
+            "name": "invoiceflow_db",
+            "$createdAt": "2026-02-21T10:28:55.581+00:00",
+            "$updatedAt": "2026-03-13T13:40:55.339+00:00",
+            "enabled": true,
+            "type": "tablesdb",
+            "policies": [
+                {
+                    "$id": "699d8ddf00138b90ea8f",
+                    "$createdAt": "2026-02-24T11:39:01.538+00:00",
+                    "$updatedAt": "2026-02-24T11:39:01.559+00:00",
+                    "key": "",
+                    "type": "",
+                    "status": "",
+                    "error": "",
+                    "attributes": [],
+                    "lengths": [],
+                    "orders": null
+                }
+            ],
+            "archives": [
+                {
+                    "$id": "69b1ada29eb87db53230",
+                    "$createdAt": "2026-03-11T18:00:02.650+00:00",
+                    "$updatedAt": "2026-03-11T18:00:19.423+00:00",
+                    "$permissions": [],
+                    "databaseId": "",
+                    "name": "",
+                    "enabled": true,
+                    "documentSecurity": "",
+                    "attributes": [],
+                    "indexes": [],
+                    "bytesMax": 0,
+                    "bytesUsed": 0
+                },
+                {
+                    "$id": "69b2ff3a69a7ec9e8848",
+                    "$createdAt": "2026-03-12T18:00:26.432+00:00",
+                    "$updatedAt": "2026-03-12T18:03:30.436+00:00",
+                    "$permissions": [],
+                    "databaseId": "",
+                    "name": "",
+                    "enabled": true,
+                    "documentSecurity": "",
+                    "attributes": [],
+                    "indexes": [],
+                    "bytesMax": 0,
+                    "bytesUsed": 0
+                },
+                {
+                    "$id": "69b450c3e722f2173997",
+                    "$createdAt": "2026-03-13T18:00:35.946+00:00",
+                    "$updatedAt": "2026-03-13T18:03:47.332+00:00",
+                    "$permissions": [],
+                    "databaseId": "",
+                    "name": "",
+                    "enabled": true,
+                    "documentSecurity": "",
+                    "attributes": [],
+                    "indexes": [],
+                    "bytesMax": 0,
+                    "bytesUsed": 0
+                },
+                {
+                    "$id": "69b5a262b465eeba1549",
+                    "$createdAt": "2026-03-14T18:01:06.738+00:00",
+                    "$updatedAt": "2026-03-14T18:06:43.636+00:00",
+                    "$permissions": [],
+                    "databaseId": "",
+                    "name": "",
+                    "enabled": true,
+                    "documentSecurity": "",
+                    "attributes": [],
+                    "indexes": [],
+                    "bytesMax": 0,
+                    "bytesUsed": 0
+                },
+                {
+                    "$id": "69b6f3f43dddd4715e80",
+                    "$createdAt": "2026-03-15T18:01:24.253+00:00",
+                    "$updatedAt": "2026-03-15T18:11:15.863+00:00",
+                    "$permissions": [],
+                    "databaseId": "",
+                    "name": "",
+                    "enabled": true,
+                    "documentSecurity": "",
+                    "attributes": [],
+                    "indexes": [],
+                    "bytesMax": 0,
+                    "bytesUsed": 0
+                },
+                {
+                    "$id": "69b8455d26dc637c4aa6",
+                    "$createdAt": "2026-03-16T18:01:01.159+00:00",
+                    "$updatedAt": "2026-03-16T18:06:36.645+00:00",
+                    "$permissions": [],
+                    "databaseId": "",
+                    "name": "",
+                    "enabled": true,
+                    "documentSecurity": "",
+                    "attributes": [],
+                    "indexes": [],
+                    "bytesMax": 0,
+                    "bytesUsed": 0
+                },
+                {
+                    "$id": "69b996fa4b39b58ebbc1",
+                    "$createdAt": "2026-03-17T18:01:30.308+00:00",
+                    "$updatedAt": "2026-03-17T18:06:47.883+00:00",
+                    "$permissions": [],
+                    "databaseId": "",
+                    "name": "",
+                    "enabled": true,
+                    "documentSecurity": "",
+                    "attributes": [],
+                    "indexes": [],
+                    "bytesMax": 0,
+                    "bytesUsed": 0
+                }
+            ]
+        }
+    ],
+    "collections": [
+        {
+            "$id": "businesses",
+            "$permissions": [],
+            "databaseId": "invoiceflow_db",
+            "name": "businesses",
+            "enabled": true,
+            "documentSecurity": false,
+            "attributes": [
+                {
+                    "key": "ownerId",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:40:25.805+00:00",
+                    "$updatedAt": "2026-02-24T11:40:26.115+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "name",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:40:58.288+00:00",
+                    "$updatedAt": "2026-02-24T11:40:58.562+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "gstin",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:41:28.636+00:00",
+                    "$updatedAt": "2026-02-24T11:41:29.410+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "pan",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:42:01.416+00:00",
+                    "$updatedAt": "2026-02-24T11:42:01.763+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "address",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:43:20.588+00:00",
+                    "$updatedAt": "2026-02-24T11:43:20.863+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "city",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:43:30.201+00:00",
+                    "$updatedAt": "2026-02-24T11:43:30.489+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "state",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:43:39.997+00:00",
+                    "$updatedAt": "2026-02-24T11:43:40.271+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "pincode",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:43:51.918+00:00",
+                    "$updatedAt": "2026-02-24T11:43:52.236+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "phone",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:44:00.572+00:00",
+                    "$updatedAt": "2026-02-24T11:44:00.911+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "email",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:44:08.306+00:00",
+                    "$updatedAt": "2026-02-24T11:44:08.606+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "website",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:44:18.444+00:00",
+                    "$updatedAt": "2026-02-24T11:44:18.800+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "logoFileId",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:44:32.879+00:00",
+                    "$updatedAt": "2026-02-24T11:44:33.151+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "signatureFileId",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:44:42.737+00:00",
+                    "$updatedAt": "2026-02-24T11:44:43.011+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "currency",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:45:17.785+00:00",
+                    "$updatedAt": "2026-02-24T11:45:18.106+00:00",
+                    "default": "INR",
+                    "encrypt": false
+                },
+                {
+                    "key": "currencySymbol",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:45:47.470+00:00",
+                    "$updatedAt": "2026-02-24T11:45:47.801+00:00",
+                    "default": "₹",
+                    "encrypt": false
+                },
+                {
+                    "key": "planType",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:46:52.443+00:00",
+                    "$updatedAt": "2026-02-24T11:46:52.770+00:00",
+                    "default": "free",
+                    "encrypt": false
+                },
+                {
+                    "key": "planExpiresAt",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:47:23.934+00:00",
+                    "$updatedAt": "2026-02-24T11:47:24.246+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "invoicePrefix",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:47:33.570+00:00",
+                    "$updatedAt": "2026-02-24T11:48:23.571+00:00",
+                    "default": "INV",
+                    "encrypt": false
+                },
+                {
+                    "key": "invoiceCounter",
+                    "type": "integer",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:49:04.196+00:00",
+                    "$updatedAt": "2026-02-24T11:49:04.561+00:00",
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807,
+                    "default": 0
+                },
+                {
+                    "key": "taxType",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:49:21.600+00:00",
+                    "$updatedAt": "2026-02-24T11:49:22.057+00:00",
+                    "default": "gst",
+                    "encrypt": false
+                },
+                {
+                    "key": "isActive",
+                    "type": "boolean",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-02-24T11:49:41.781+00:00",
+                    "$updatedAt": "2026-02-24T11:49:42.137+00:00",
+                    "default": true
+                }
+            ],
+            "indexes": [],
+            "bytesMax": 65535,
+            "bytesUsed": 1456
+        },
+        {
+            "$id": "customers",
+            "$permissions": [],
+            "databaseId": "invoiceflow_db",
+            "name": "customers",
+            "enabled": true,
+            "documentSecurity": false,
+            "attributes": [
+                {
+                    "key": "businessId",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:35:39.311+00:00",
+                    "$updatedAt": "2026-03-18T12:35:39.966+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "name",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:35:52.356+00:00",
+                    "$updatedAt": "2026-03-18T12:35:53.056+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "phone",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:36:14.770+00:00",
+                    "$updatedAt": "2026-03-18T12:36:15.446+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "email",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:36:24.700+00:00",
+                    "$updatedAt": "2026-03-18T12:36:25.285+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "gstin",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:37:01.398+00:00",
+                    "$updatedAt": "2026-03-18T12:37:02.174+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "address",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:52:14.994+00:00",
+                    "$updatedAt": "2026-03-18T12:52:15.315+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "city",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:52:25.992+00:00",
+                    "$updatedAt": "2026-03-18T12:52:26.383+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "state",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:52:54.395+00:00",
+                    "$updatedAt": "2026-03-18T12:52:54.830+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "pincode",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:53:43.417+00:00",
+                    "$updatedAt": "2026-03-18T12:53:43.736+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "balance",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:54:26.224+00:00",
+                    "$updatedAt": "2026-03-18T12:54:26.555+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "totalPurchases",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:54:32.627+00:00",
+                    "$updatedAt": "2026-03-18T12:54:33.052+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "totalInvoices",
+                    "type": "integer",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:54:43.180+00:00",
+                    "$updatedAt": "2026-03-18T12:54:43.487+00:00",
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "tags",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": true,
+                    "$createdAt": "2026-03-18T12:55:03.032+00:00",
+                    "$updatedAt": "2026-03-18T12:55:03.457+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "notes",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:55:22.420+00:00",
+                    "$updatedAt": "2026-03-18T12:55:22.863+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "isActive",
+                    "type": "boolean",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T12:55:48.618+00:00",
+                    "$updatedAt": "2026-03-18T12:55:48.979+00:00",
+                    "default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "$id": "112867_2_businessId_idx",
+                    "$createdAt": "2026-03-18T12:57:08.654+00:00",
+                    "$updatedAt": "2026-03-18T12:57:08.844+00:00",
+                    "key": "businessId_idx",
+                    "type": "key",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "businessId"
+                    ],
+                    "lengths": [
+                        700
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_2_phone_idx",
+                    "$createdAt": "2026-03-18T12:57:28.686+00:00",
+                    "$updatedAt": "2026-03-18T12:57:29.516+00:00",
+                    "key": "phone_idx",
+                    "type": "fulltext",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "phone"
+                    ],
+                    "lengths": [
+                        0
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_2_name_idx",
+                    "$createdAt": "2026-03-18T12:57:42.832+00:00",
+                    "$updatedAt": "2026-03-18T12:57:43.195+00:00",
+                    "key": "name_idx",
+                    "type": "fulltext",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "name"
+                    ],
+                    "lengths": [
+                        0
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                }
+            ],
+            "bytesMax": 65535,
+            "bytesUsed": 1312
+        },
+        {
+            "$id": "products",
+            "$permissions": [],
+            "databaseId": "invoiceflow_db",
+            "name": "products",
+            "enabled": true,
+            "documentSecurity": false,
+            "attributes": [
+                {
+                    "key": "businessId",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:23:30.874+00:00",
+                    "$updatedAt": "2026-03-18T13:23:31.300+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "name",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:24:11.702+00:00",
+                    "$updatedAt": "2026-03-18T13:24:12.185+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "description",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:24:20.094+00:00",
+                    "$updatedAt": "2026-03-18T13:24:20.627+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "barcode",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:24:34.761+00:00",
+                    "$updatedAt": "2026-03-18T13:24:35.131+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "category",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:24:45.211+00:00",
+                    "$updatedAt": "2026-03-18T13:24:45.625+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "unit",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:25:07.861+00:00",
+                    "$updatedAt": "2026-03-18T13:25:08.304+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "price",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:25:52.673+00:00",
+                    "$updatedAt": "2026-03-18T13:27:58.811+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "costPrice",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:26:17.656+00:00",
+                    "$updatedAt": "2026-03-18T13:26:18.091+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": 0
+                },
+                {
+                    "key": "mrp",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:28:13.761+00:00",
+                    "$updatedAt": "2026-03-18T13:28:14.219+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": 0
+                },
+                {
+                    "key": "taxRate",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:28:33.883+00:00",
+                    "$updatedAt": "2026-03-18T13:28:34.427+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "hsnCode",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:28:53.931+00:00",
+                    "$updatedAt": "2026-03-18T13:28:54.321+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "stock",
+                    "type": "integer",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:29:04.790+00:00",
+                    "$updatedAt": "2026-03-18T13:29:05.207+00:00",
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "lowStockThreshold",
+                    "type": "integer",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:29:15.688+00:00",
+                    "$updatedAt": "2026-03-18T13:29:16.048+00:00",
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807,
+                    "default": null
+                },
+                {
+                    "key": "imageFileId",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:29:25.297+00:00",
+                    "$updatedAt": "2026-03-18T13:29:31.234+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "isService",
+                    "type": "boolean",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:29:43.611+00:00",
+                    "$updatedAt": "2026-03-18T13:29:44.051+00:00",
+                    "default": null
+                },
+                {
+                    "key": "isActive",
+                    "type": "boolean",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:29:55.868+00:00",
+                    "$updatedAt": "2026-03-18T13:29:56.289+00:00",
+                    "default": null
+                },
+                {
+                    "key": "sku",
+                    "type": "string",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T13:32:33.385+00:00",
+                    "$updatedAt": "2026-03-18T13:32:33.805+00:00",
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "$id": "112867_3_businessId_idx",
+                    "$createdAt": "2026-03-18T13:31:21.209+00:00",
+                    "$updatedAt": "2026-03-18T13:31:21.425+00:00",
+                    "key": "businessId_idx",
+                    "type": "key",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "businessId"
+                    ],
+                    "lengths": [
+                        700
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_3_sku_idx",
+                    "$createdAt": "2026-03-18T13:33:10.527+00:00",
+                    "$updatedAt": "2026-03-18T13:33:10.725+00:00",
+                    "key": "sku_idx",
+                    "type": "unique",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "sku"
+                    ],
+                    "lengths": [
+                        0
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_3_name_idx",
+                    "$createdAt": "2026-03-18T13:33:33.629+00:00",
+                    "$updatedAt": "2026-03-18T13:33:34.492+00:00",
+                    "key": "name_idx",
+                    "type": "fulltext",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "name"
+                    ],
+                    "lengths": [
+                        0
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_3_category_idx",
+                    "$createdAt": "2026-03-18T13:34:03.134+00:00",
+                    "$updatedAt": "2026-03-18T13:34:03.361+00:00",
+                    "key": "category_idx",
+                    "type": "key",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "category"
+                    ],
+                    "lengths": [
+                        700
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                }
+            ],
+            "bytesMax": 65535,
+            "bytesUsed": 1422
+        },
+        {
+            "$id": "invoices",
+            "$permissions": [],
+            "databaseId": "invoiceflow_db",
+            "name": "invoices",
+            "enabled": true,
+            "documentSecurity": false,
+            "attributes": [
+                {
+                    "key": "businessId",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:02:39.792+00:00",
+                    "$updatedAt": "2026-03-18T14:02:40.168+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "customerId",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:02:54.000+00:00",
+                    "$updatedAt": "2026-03-18T14:03:09.590+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "customerName",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:03:25.386+00:00",
+                    "$updatedAt": "2026-03-18T14:03:25.806+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "customerPhone",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:03:36.519+00:00",
+                    "$updatedAt": "2026-03-18T14:03:36.950+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "customerGstin",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:03:47.599+00:00",
+                    "$updatedAt": "2026-03-18T14:03:47.924+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "invoiceDate",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:04:10.635+00:00",
+                    "$updatedAt": "2026-03-18T14:04:10.952+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "dueDate",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:04:24.918+00:00",
+                    "$updatedAt": "2026-03-18T14:04:25.297+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "items",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:04:33.621+00:00",
+                    "$updatedAt": "2026-03-18T14:04:33.990+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "subTotal",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:04:53.753+00:00",
+                    "$updatedAt": "2026-03-18T14:04:54.118+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "discountType",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:05:15.842+00:00",
+                    "$updatedAt": "2026-03-18T14:05:16.209+00:00",
+                    "default": "none",
+                    "encrypt": false
+                },
+                {
+                    "key": "discountValue",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:05:36.015+00:00",
+                    "$updatedAt": "2026-03-18T14:05:36.412+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "discountAmount",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:05:57.017+00:00",
+                    "$updatedAt": "2026-03-18T14:05:57.406+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "cgstAmount",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:06:10.878+00:00",
+                    "$updatedAt": "2026-03-18T14:06:11.309+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "sgstAmount",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:06:26.881+00:00",
+                    "$updatedAt": "2026-03-18T14:06:27.321+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "igstAmount",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:06:44.662+00:00",
+                    "$updatedAt": "2026-03-18T14:06:45.069+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "totalTax",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:07:00.590+00:00",
+                    "$updatedAt": "2026-03-18T14:07:00.996+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "totalAmount",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:07:15.554+00:00",
+                    "$updatedAt": "2026-03-18T14:07:15.919+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "paidAmount",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:07:36.585+00:00",
+                    "$updatedAt": "2026-03-18T14:07:36.951+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "balanceDue",
+                    "type": "double",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:07:48.876+00:00",
+                    "$updatedAt": "2026-03-18T14:07:49.208+00:00",
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "default": null
+                },
+                {
+                    "key": "status",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:08:14.402+00:00",
+                    "$updatedAt": "2026-03-18T14:08:14.798+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "paymentMethod",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:08:33.475+00:00",
+                    "$updatedAt": "2026-03-18T14:08:33.915+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "paymentDate",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:08:50.861+00:00",
+                    "$updatedAt": "2026-03-18T14:08:51.212+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "notes",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:09:05.303+00:00",
+                    "$updatedAt": "2026-03-18T14:09:05.837+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "termsConditions",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:09:19.505+00:00",
+                    "$updatedAt": "2026-03-18T14:09:19.907+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "pdfFileId",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:09:32.483+00:00",
+                    "$updatedAt": "2026-03-18T14:09:32.945+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "isRecurring",
+                    "type": "boolean",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:09:56.962+00:00",
+                    "$updatedAt": "2026-03-18T14:09:57.326+00:00",
+                    "default": null
+                },
+                {
+                    "key": "recurringInterval",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:10:12.132+00:00",
+                    "$updatedAt": "2026-03-18T14:10:12.746+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "staffId",
+                    "type": "text",
+                    "status": "available",
+                    "error": "",
+                    "required": false,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:10:27.151+00:00",
+                    "$updatedAt": "2026-03-18T14:10:27.505+00:00",
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "invoiceNumber",
+                    "type": "string",
+                    "status": "available",
+                    "error": "",
+                    "required": true,
+                    "array": false,
+                    "$createdAt": "2026-03-18T14:14:05.041+00:00",
+                    "$updatedAt": "2026-03-18T14:14:05.450+00:00",
+                    "size": 750,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "$id": "112867_4_businessId_idx",
+                    "$createdAt": "2026-03-18T14:11:42.338+00:00",
+                    "$updatedAt": "2026-03-18T14:11:42.536+00:00",
+                    "key": "businessId_idx",
+                    "type": "key",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "businessId"
+                    ],
+                    "lengths": [
+                        700
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_4_customerId_idx",
+                    "$createdAt": "2026-03-18T14:12:10.144+00:00",
+                    "$updatedAt": "2026-03-18T14:12:10.321+00:00",
+                    "key": "customerId_idx",
+                    "type": "key",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "customerId"
+                    ],
+                    "lengths": [
+                        700
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_4_status_idx",
+                    "$createdAt": "2026-03-18T14:12:37.241+00:00",
+                    "$updatedAt": "2026-03-18T14:12:37.426+00:00",
+                    "key": "status_idx",
+                    "type": "key",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "status"
+                    ],
+                    "lengths": [
+                        700
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_4_invoiceNumber_idx",
+                    "$createdAt": "2026-03-18T14:14:33.467+00:00",
+                    "$updatedAt": "2026-03-18T14:14:33.636+00:00",
+                    "key": "invoiceNumber_idx",
+                    "type": "unique",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "invoiceNumber"
+                    ],
+                    "lengths": [
+                        0
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_4_invoiceDate_idx",
+                    "$createdAt": "2026-03-18T14:15:25.058+00:00",
+                    "$updatedAt": "2026-03-18T14:15:25.385+00:00",
+                    "key": "invoiceDate_idx",
+                    "type": "key",
+                    "status": "available",
+                    "error": "",
+                    "attributes": [
+                        "invoiceDate"
+                    ],
+                    "lengths": [
+                        750
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                }
+            ],
+            "bytesMax": 65535,
+            "bytesUsed": 4490
+        }
+    ],
+    "tablesDB": [
+        {
+            "$id": "invoiceflow_db",
+            "name": "invoiceflow_db",
+            "enabled": true
+        }
+    ],
+    "tables": [
+        {
+            "$id": "businesses",
+            "$permissions": [],
+            "databaseId": "invoiceflow_db",
+            "name": "businesses",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "ownerId",
+                    "type": "text",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "name",
+                    "type": "text",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "gstin",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "pan",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "address",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "city",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "state",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "pincode",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "phone",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "email",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "website",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "logoFileId",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "signatureFileId",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "currency",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": "INR",
+                    "encrypt": false
+                },
+                {
+                    "key": "currencySymbol",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": "₹",
+                    "encrypt": false
+                },
+                {
+                    "key": "planType",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": "free",
+                    "encrypt": false
+                },
+                {
+                    "key": "planExpiresAt",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "invoicePrefix",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": "INV",
+                    "encrypt": false
+                },
+                {
+                    "key": "invoiceCounter",
+                    "type": "integer",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "taxType",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": "gst",
+                    "encrypt": false
+                },
+                {
+                    "key": "isActive",
+                    "type": "boolean",
+                    "required": false,
+                    "array": false,
+                    "default": true
+                }
+            ],
+            "indexes": []
+        },
+        {
+            "$id": "customers",
+            "$permissions": [],
+            "databaseId": "invoiceflow_db",
+            "name": "customers",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "businessId",
+                    "type": "text",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "name",
+                    "type": "text",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "phone",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "email",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "gstin",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "address",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "city",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "state",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "pincode",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "balance",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+                },
+                {
+                    "key": "totalPurchases",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+                },
+                {
+                    "key": "totalInvoices",
+                    "type": "integer",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "tags",
+                    "type": "text",
+                    "required": false,
+                    "array": true,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "notes",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "isActive",
+                    "type": "boolean",
+                    "required": true,
+                    "array": false,
+                    "default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "$id": "112867_2_businessId_idx",
+                    "$createdAt": "2026-03-18T12:57:08.654+00:00",
+                    "$updatedAt": "2026-03-18T12:57:08.844+00:00",
+                    "key": "businessId_idx",
+                    "type": "key",
+                    "status": "available",
+                    "error": "",
+                    "columns": [
+                        "businessId"
+                    ],
+                    "lengths": [
+                        700
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_2_phone_idx",
+                    "$createdAt": "2026-03-18T12:57:28.686+00:00",
+                    "$updatedAt": "2026-03-18T12:57:29.516+00:00",
+                    "key": "phone_idx",
+                    "type": "fulltext",
+                    "status": "available",
+                    "error": "",
+                    "columns": [
+                        "phone"
+                    ],
+                    "lengths": [
+                        0
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_2_name_idx",
+                    "$createdAt": "2026-03-18T12:57:42.832+00:00",
+                    "$updatedAt": "2026-03-18T12:57:43.195+00:00",
+                    "key": "name_idx",
+                    "type": "fulltext",
+                    "status": "available",
+                    "error": "",
+                    "columns": [
+                        "name"
+                    ],
+                    "lengths": [
+                        0
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "products",
+            "$permissions": [],
+            "databaseId": "invoiceflow_db",
+            "name": "products",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "businessId",
+                    "type": "text",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "name",
+                    "type": "text",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "description",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "barcode",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "category",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "unit",
+                    "type": "text",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "price",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+                },
+                {
+                    "key": "costPrice",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+                },
+                {
+                    "key": "mrp",
+                    "type": "double",
+                    "required": false,
+                    "array": false,
+                    "default": 0,
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+                },
+                {
+                    "key": "taxRate",
+                    "type": "double",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "min": -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,
+                    "max": 179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+                },
+                {
+                    "key": "hsnCode",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "stock",
+                    "type": "integer",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "lowStockThreshold",
+                    "type": "integer",
+                    "required": true,
+                    "array": false,
+                    "default": null,
+                    "min": -9223372036854775808,
+                    "max": 9223372036854775807
+                },
+                {
+                    "key": "imageFileId",
+                    "type": "text",
+                    "required": false,
+                    "array": false,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "isService",
+                    "type": "boolean",
+                    "required": true,
+                    "array": false,
+                    "default": null
+                },
+                {
+                    "key": "isActive",
+                    "type": "boolean",
+                    "required": true,
+                    "array": false,
+                    "default": null
+                },
+                {
+                    "key": "sku",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 36,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "$id": "112867_3_businessId_idx",
+                    "$createdAt": "2026-03-18T13:31:21.209+00:00",
+                    "$updatedAt": "2026-03-18T13:31:21.425+00:00",
+                    "key": "businessId_idx",
+                    "type": "key",
+                    "status": "available",
+                    "error": "",
+                    "columns": [
+                        "businessId"
+                    ],
+                    "lengths": [
+                        700
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_3_sku_idx",
+                    "$createdAt": "2026-03-18T13:33:10.527+00:00",
+                    "$updatedAt": "2026-03-18T13:33:10.725+00:00",
+                    "key": "sku_idx",
+                    "type": "unique",
+                    "status": "available",
+                    "error": "",
+                    "columns": [
+                        "sku"
+                    ],
+                    "lengths": [
+                        0
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_3_name_idx",
+                    "$createdAt": "2026-03-18T13:33:33.629+00:00",
+                    "$updatedAt": "2026-03-18T13:33:34.492+00:00",
+                    "key": "name_idx",
+                    "type": "fulltext",
+                    "status": "available",
+                    "error": "",
+                    "columns": [
+                        "name"
+                    ],
+                    "lengths": [
+                        0
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                },
+                {
+                    "$id": "112867_3_category_idx",
+                    "$createdAt": "2026-03-18T13:34:03.134+00:00",
+                    "$updatedAt": "2026-03-18T13:34:03.361+00:00",
+                    "key": "category_idx",
+                    "type": "key",
+                    "status": "available",
+                    "error": "",
+                    "columns": [
+                        "category"
+                    ],
+                    "lengths": [
+                        700
+                    ],
+                    "orders": [
+                        "asc"
+                    ]
+                }
+            ]
+        },
+        {
+            "$id": "invoices",
+            "$permissions": [],
+            "databaseId": "invoiceflow_db",
+            "name": "invoices",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [],
+            "indexes": []
+        }
+    ],
+    "buckets": [],
+    "teams": [],
+    "topics": []
+}
