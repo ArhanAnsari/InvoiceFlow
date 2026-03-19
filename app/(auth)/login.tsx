@@ -1,12 +1,7 @@
-import {
-  Colors,
-  Gradients,
-  Radius,
-  Spacing,
-  Typography,
-} from "@/constants/theme";
+import { Colors, Radius, Spacing, Typography } from "@/constants/theme";
 import { useIsDark, useTheme } from "@/hooks/use-theme";
 import { ThemedInput } from "@/src/components/ThemedInput";
+import { BrandLogo } from "@/src/components/ui/BrandLogo";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { PrimaryButton } from "@/src/components/ui/PrimaryButton";
 import { useAuthStore } from "@/src/store/authStore";
@@ -73,14 +68,7 @@ export default function LoginScreen() {
         >
           {/* Logo section */}
           <View style={styles.logoSection}>
-            <LinearGradient
-              colors={Gradients.primary}
-              style={styles.logoCircle}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="receipt-outline" size={32} color="#fff" />
-            </LinearGradient>
+            <BrandLogo size={72} radius={22} />
             <Text style={styles.appName}>InvoiceFlow</Text>
             <Text style={styles.tagline}>
               Smart billing for modern businesses
@@ -231,17 +219,10 @@ function createStyles(T: typeof Colors.dark) {
       alignItems: "center",
       marginBottom: Spacing["3xl"],
     },
-    logoCircle: {
-      width: 72,
-      height: 72,
-      borderRadius: 22,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 14,
-    },
     appName: {
       ...Typography.h1,
       color: "#fff",
+      marginTop: 14,
       marginBottom: 6,
     },
     tagline: {

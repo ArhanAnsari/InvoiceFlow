@@ -20,7 +20,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const user = await account.get();
       set({ user, isLoading: false });
-      router.replace("/(main)");
     } catch (error) {
       set({ user: null, isLoading: false });
     }

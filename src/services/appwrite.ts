@@ -16,7 +16,7 @@ export const APPWRITE_ENDPOINT =
   process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT ??
   "https://fra.cloud.appwrite.io/v1";
 export const APPWRITE_PROJECT_ID =
-  process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID ?? "invoiceflow";
+  process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID ?? "699988ac001cd0857f48";
 export const DB_ID = process.env.EXPO_PUBLIC_APPWRITE_DB_ID ?? "invoiceflow_db";
 
 // ─── Collection IDs ────────────────────────────────────────────────

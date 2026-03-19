@@ -15,7 +15,31 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { initDatabase } from "@/src/services/database";
 import "@/src/services/sync";
 import { useAuthStore } from "@/src/store/authStore";
+import { useBusinessStore } from "@/src/store/businessStore";
 import { useUIStore } from "@/src/store/uiStore";
+import * as Sentry from "@sentry/react-native";
+
+Sentry.init({
+  dsn: "https://4c2a00d4711220e3d7e4307ed4aaf485@o4508228539645952.ingest.us.sentry.io/4511071889784832",
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [
+    Sentry.mobileReplayIntegration(),
+    Sentry.feedbackIntegration(),
+  ],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -43,10 +67,15 @@ const AppLightTheme = {
   },
 };
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   const systemColorScheme = useColorScheme();
   const { themeMode } = useUIStore();
   const { checkSession, user, isLoading } = useAuthStore();
+  const {
+    currentBusiness,
+    fetchBusinesses,
+    isLoading: isBusinessLoading,
+  } = useBusinessStore();
   const segments = useSegments();
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
@@ -63,14 +92,39 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (!isMounted || isLoading) return;
+    if (!user?.$id) return;
+    fetchBusinesses(user.$id);
+  }, [user?.$id]);
+
+  useEffect(() => {
+    if (!isMounted || isLoading || isBusinessLoading) return;
+
     const inAuthGroup = segments[0] === "(auth)";
+    const onBusinessSetup = inAuthGroup && segments[1] === "business-setup";
+
     if (!user && !inAuthGroup) {
       router.replace("/(auth)/login");
-    } else if (user && inAuthGroup) {
+      return;
+    }
+
+    if (!user) return;
+
+    if (!currentBusiness && !onBusinessSetup) {
+      router.replace("/(auth)/business-setup");
+      return;
+    }
+
+    if (user && inAuthGroup && !onBusinessSetup) {
       router.replace("/(main)");
     }
-  }, [user, segments, isLoading, isMounted]);
+  }, [
+    user,
+    currentBusiness,
+    segments,
+    isLoading,
+    isBusinessLoading,
+    isMounted,
+  ]);
 
   useEffect(() => {
     if (!isLoading) SplashScreen.hideAsync();
@@ -97,9 +151,8 @@ export default function RootLayout() {
         <Stack.Screen name="(main)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-        <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style={isDark ? "light" : "dark"} />
     </ThemeProvider>
   );
-}
+});

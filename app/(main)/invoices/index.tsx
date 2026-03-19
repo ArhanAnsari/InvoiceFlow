@@ -5,6 +5,7 @@ import { EmptyState } from "@/src/components/ui/EmptyState";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { SearchBar } from "@/src/components/ui/SearchBar";
 import { StatusBadge } from "@/src/components/ui/StatusBadge";
+import { TabSwipeContainer } from "@/src/components/ui/TabSwipeContainer";
 import { useBusinessStore } from "@/src/store/businessStore";
 import { useInvoiceStore } from "@/src/store/invoiceStore";
 import { StatusVariant } from "@/src/types";
@@ -12,14 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-    FlatList,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const FILTERS = ["All", "Unpaid", "Paid", "Partial"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -63,113 +58,148 @@ export default function InvoicesScreen() {
     return matchFilter && matchQuery;
   });
 
-  return (
-    <LinearGradient
-      colors={
-        isDark
-          ? ["#0D0F1E", "#131629", "#0D0F1E"]
-          : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
-      }
-      style={styles.root}
-    >
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Invoices</Text>
-            <Text style={styles.subtitle}>{filtered.length} records</Text>
-          </View>
-          <Pressable
-            style={styles.addBtn}
-            onPress={() => router.push("/(main)/invoices/create")}
-          >
-            <Ionicons name="add" size={24} color="#fff" />
-          </Pressable>
-        </View>
-
-        <View style={styles.searchWrap}>
-          <SearchBar
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search by name or number�"
-            dark={isDark}
-          />
-        </View>
-
-        {/* Filter chips */}
-        <View style={styles.filterRow}>
-          {FILTERS.map((f) => (
-            <Pressable
-              key={f}
-              style={[styles.chip, filter === f && styles.chipActive]}
-              onPress={() => setFilter(f)}
-            >
-              <Text
-                style={[styles.chipText, filter === f && styles.chipTextActive]}
-              >
-                {f}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {filtered.length === 0 ? (
+  if (!currentBusiness) {
+    return (
+      <TabSwipeContainer currentRoute="/(main)/invoices">
+        <LinearGradient
+          colors={
+            isDark
+              ? ["#0D0F1E", "#131629", "#0D0F1E"]
+              : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
+          }
+          style={styles.root}
+        >
           <EmptyState
             icon={
-              <Ionicons name="receipt-outline" size={56} color={T.textMuted} />
+              <Ionicons name="business-outline" size={56} color={T.textMuted} />
             }
-            title="No invoices found"
-            subtitle={
-              query || filter !== "All"
-                ? "Try adjusting your filters."
-                : "Create your first invoice by tapping +."
-            }
+            title="Business setup required"
+            subtitle="Set up your business before creating invoices."
+            ctaLabel="Set up business"
+            onCta={() => router.push("/(auth)/business-setup" as any)}
             dark={isDark}
           />
-        ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.$id}
-            contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator={false}
-            refreshing={isLoading}
-            onRefresh={load}
-            renderItem={({ item }) => (
+        </LinearGradient>
+      </TabSwipeContainer>
+    );
+  }
+
+  return (
+    <TabSwipeContainer currentRoute="/(main)/invoices">
+      <LinearGradient
+        colors={
+          isDark
+            ? ["#0D0F1E", "#131629", "#0D0F1E"]
+            : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
+        }
+        style={styles.root}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.title}>Invoices</Text>
+              <Text style={styles.subtitle}>{filtered.length} records</Text>
+            </View>
+            <Pressable
+              style={styles.addBtn}
+              onPress={() => router.push("/(main)/invoices/create")}
+            >
+              <Ionicons name="add" size={24} color="#fff" />
+            </Pressable>
+          </View>
+
+          <View style={styles.searchWrap}>
+            <SearchBar
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search by name or number�"
+              dark={isDark}
+            />
+          </View>
+
+          {/* Filter chips */}
+          <View style={styles.filterRow}>
+            {FILTERS.map((f) => (
               <Pressable
-                onPress={() =>
-                  router.push({
-                    pathname: "/(main)/invoices/[id]",
-                    params: { id: item.$id },
-                  })
-                }
+                key={f}
+                style={[styles.chip, filter === f && styles.chipActive]}
+                onPress={() => setFilter(f)}
               >
-                <GlassCard dark={isDark} noPadding style={styles.card}>
-                  <View style={styles.row}>
-                    <Avatar name={item.customerName} size={44} />
-                    <View style={styles.info}>
-                      <Text style={styles.customer}>{item.customerName}</Text>
-                      <Text style={styles.invoiceNum}>
-                        {item.invoiceNumber}
-                      </Text>
-                      <Text style={styles.date}>
-                        {new Date(
-                          item.invoiceDate ?? item.$createdAt,
-                        ).toLocaleDateString("en-IN")}
-                      </Text>
-                    </View>
-                    <View style={styles.right}>
-                      <Text style={styles.amount}>
-                        ?{parseFloat(item.totalAmount).toLocaleString()}
-                      </Text>
-                      <StatusBadge status={statusVariant(item.status)} />
-                    </View>
-                  </View>
-                </GlassCard>
+                <Text
+                  style={[
+                    styles.chipText,
+                    filter === f && styles.chipTextActive,
+                  ]}
+                >
+                  {f}
+                </Text>
               </Pressable>
-            )}
-          />
-        )}
-      </SafeAreaView>
-    </LinearGradient>
+            ))}
+          </View>
+
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon={
+                <Ionicons
+                  name="receipt-outline"
+                  size={56}
+                  color={T.textMuted}
+                />
+              }
+              title="No invoices found"
+              subtitle={
+                query || filter !== "All"
+                  ? "Try adjusting your filters."
+                  : "Create your first invoice by tapping +."
+              }
+              dark={isDark}
+            />
+          ) : (
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item.$id}
+              contentContainerStyle={styles.list}
+              showsVerticalScrollIndicator={false}
+              refreshing={isLoading}
+              onRefresh={load}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(main)/invoices/[id]",
+                      params: { id: item.$id },
+                    })
+                  }
+                >
+                  <GlassCard dark={isDark} noPadding style={styles.card}>
+                    <View style={styles.row}>
+                      <Avatar name={item.customerName} size={44} />
+                      <View style={styles.info}>
+                        <Text style={styles.customer}>{item.customerName}</Text>
+                        <Text style={styles.invoiceNum}>
+                          {item.invoiceNumber}
+                        </Text>
+                        <Text style={styles.date}>
+                          {new Date(
+                            item.invoiceDate ?? item.$createdAt,
+                          ).toLocaleDateString("en-IN")}
+                        </Text>
+                      </View>
+                      <View style={styles.right}>
+                        <Text style={styles.amount}>
+                          ?{parseFloat(item.totalAmount).toLocaleString()}
+                        </Text>
+                        <StatusBadge status={statusVariant(item.status)} />
+                      </View>
+                    </View>
+                  </GlassCard>
+                </Pressable>
+              )}
+            />
+          )}
+        </SafeAreaView>
+      </LinearGradient>
+    </TabSwipeContainer>
   );
 }
 

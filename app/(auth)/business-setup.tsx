@@ -1,12 +1,7 @@
-import {
-    Colors,
-    Gradients,
-    Radius,
-    Spacing,
-    Typography,
-} from "@/constants/theme";
+import { Colors, Radius, Spacing, Typography } from "@/constants/theme";
 import { useIsDark, useTheme } from "@/hooks/use-theme";
 import { ThemedInput } from "@/src/components/ThemedInput";
+import { BrandLogo } from "@/src/components/ui/BrandLogo";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { PrimaryButton } from "@/src/components/ui/PrimaryButton";
 import { useAuthStore } from "@/src/store/authStore";
@@ -101,14 +96,7 @@ export default function BusinessSetupScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <LinearGradient
-              colors={Gradients.primary}
-              style={styles.logoCircle}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="business-outline" size={28} color="#fff" />
-            </LinearGradient>
+            <BrandLogo size={60} radius={18} />
             <Text style={styles.h1}>Set up your business</Text>
             <Text style={styles.subtitle}>
               Step {step + 1} of {STEPS.length} � {STEPS[step]}
@@ -353,17 +341,10 @@ function createStyles(T: typeof Colors.dark) {
       right: -60,
     },
     header: { alignItems: "center", marginBottom: Spacing.xl },
-    logoCircle: {
-      width: 60,
-      height: 60,
-      borderRadius: 18,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 12,
-    },
     h1: {
       ...Typography.h2,
       color: T.text,
+      marginTop: 12,
       marginBottom: 4,
       textAlign: "center",
     },

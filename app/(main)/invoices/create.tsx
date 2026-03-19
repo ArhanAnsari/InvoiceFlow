@@ -17,12 +17,12 @@ import {
     KeyboardAvoidingView,
     Platform,
     Pressable,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface LineItem {
   productId: string;
@@ -132,6 +132,15 @@ export default function CreateInvoiceScreen() {
   const totalAmount = subTotal + totalTax - discAmount;
 
   const handleCreate = async () => {
+    if (!currentBusiness?.$id) {
+      Alert.alert(
+        "Business setup required",
+        "Please complete business setup before creating invoices.",
+      );
+      router.push("/(auth)/business-setup" as any);
+      return;
+    }
+
     if (!customerId) {
       Alert.alert("Required", "Please select a customer.");
       return;
@@ -141,10 +150,17 @@ export default function CreateInvoiceScreen() {
       return;
     }
     try {
+      const invoiceDate = new Date().toISOString();
+      const invoicePrefix = (currentBusiness as any)?.invoicePrefix ?? "INV";
+      const invoiceNumber = `${invoicePrefix}-${Date.now().toString().slice(-6)}`;
+
       await createInvoice({
         businessId: currentBusiness?.$id,
         customerId,
         customerName,
+        invoiceNumber,
+        date: invoiceDate,
+        invoiceDate,
         items: lines,
         subTotal,
         discountType,

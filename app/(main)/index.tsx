@@ -5,6 +5,7 @@ import { EmptyState } from "@/src/components/ui/EmptyState";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { MetricCard } from "@/src/components/ui/MetricCard";
 import { StatusBadge } from "@/src/components/ui/StatusBadge";
+import { TabSwipeContainer } from "@/src/components/ui/TabSwipeContainer";
 import { useAuthStore } from "@/src/store/authStore";
 import { useBusinessStore } from "@/src/store/businessStore";
 import { useInvoiceStore } from "@/src/store/invoiceStore";
@@ -13,15 +14,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo } from "react";
 import {
-  Platform,
-  Pressable,
-  RefreshControl,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Platform,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function formatCurrency(amount: number, symbol = "\u20b9") {
   if (amount >= 100000) return `${symbol}${(amount / 100000).toFixed(1)}L`;
@@ -42,7 +43,7 @@ export default function DashboardScreen() {
   const styles = useMemo(() => createStyles(T), [T]);
   const router = useRouter();
   const { user } = useAuthStore() as any;
-  const { currentBusiness, fetchBusinesses } = useBusinessStore();
+  const { currentBusiness } = useBusinessStore();
   const { invoices, fetchInvoices, isLoading } = useInvoiceStore() as any;
 
   const reload = useCallback(async () => {
@@ -73,209 +74,213 @@ export default function DashboardScreen() {
 
   if (!currentBusiness) {
     return (
-      <LinearGradient
-        colors={isDark ? ["#0D0F1E", "#131629"] : ["#EEF2FF", "#F5F7FA"]}
-        style={styles.root}
-      >
-        <EmptyState
-          icon={
-            <Ionicons name="business-outline" size={56} color={T.textMuted} />
-          }
-          title="No business setup"
-          subtitle="Complete your business setup to get started with InvoiceFlow."
-          ctaLabel="Set up business"
-          onCta={() => router.push("/(auth)/business-setup" as any)}
-          dark={isDark}
-        />
-      </LinearGradient>
+      <TabSwipeContainer currentRoute="/(main)">
+        <LinearGradient
+          colors={isDark ? ["#0D0F1E", "#131629"] : ["#EEF2FF", "#F5F7FA"]}
+          style={styles.root}
+        >
+          <EmptyState
+            icon={
+              <Ionicons name="business-outline" size={56} color={T.textMuted} />
+            }
+            title="No business setup"
+            subtitle="Complete your business setup to get started with InvoiceFlow."
+            ctaLabel="Set up business"
+            onCta={() => router.push("/(auth)/business-setup" as any)}
+            dark={isDark}
+          />
+        </LinearGradient>
+      </TabSwipeContainer>
     );
   }
 
   const firstName = user?.name?.split(" ")[0] ?? "there";
 
   return (
-    <LinearGradient
-      colors={
-        isDark
-          ? ["#0D0F1E", "#131629", "#0D0F1E"]
-          : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
-      }
-      style={styles.root}
-    >
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isLoading}
-              onRefresh={reload}
-              tintColor={T.primary}
-            />
-          }
-        >
-          {/* Header */}
-          <View style={styles.headerRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.greeting}>Good morning,</Text>
-              <Text style={styles.name}>{firstName} ??</Text>
-            </View>
-            <Pressable
-              onPress={() => router.push("/(main)/more" as any)}
-              hitSlop={8}
-            >
-              <Avatar name={user?.name} size={44} />
-            </Pressable>
-          </View>
-
-          {/* Business pill */}
-          <LinearGradient
-            colors={["rgba(99,102,241,0.25)", "rgba(139,92,246,0.15)"]}
-            style={styles.businessPill}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <Ionicons name="business-outline" size={16} color={T.primary} />
-            <Text style={styles.businessName}>{currentBusiness.name}</Text>
-            <Ionicons
-              name="chevron-down-outline"
-              size={14}
-              color={T.textMuted}
-            />
-          </LinearGradient>
-
-          {/* KPI Cards */}
-          <View style={styles.kpiGrid}>
-            <MetricCard
-              title="Total Revenue"
-              value={formatCurrency(totalRevenue)}
-              subtitle={`${paidCount} invoices paid`}
-              gradient={Gradients.primary}
-              style={styles.kpiWide}
-            />
-            <MetricCard
-              title="Pending"
-              value={formatCurrency(totalPending)}
-              subtitle="Outstanding balance"
-              dark={isDark}
-              style={styles.kpiHalf}
-            />
-            <MetricCard
-              title="Invoices"
-              value={String(totalInvoices)}
-              subtitle="This month"
-              dark={isDark}
-              style={styles.kpiHalf}
-            />
-          </View>
-
-          {/* Quick Actions */}
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionRow}>
-            {[
-              {
-                icon: "add-circle-outline",
-                label: "New Invoice",
-                onPress: () => router.push("/(main)/invoices/create" as any),
-              },
-              {
-                icon: "person-add-outline",
-                label: "Add Customer",
-                onPress: () => router.push("/(main)/customers"),
-              },
-              {
-                icon: "cube-outline",
-                label: "Add Product",
-                onPress: () => router.push("/(main)/products"),
-              },
-              {
-                icon: "bar-chart-outline",
-                label: "Reports",
-                onPress: () => router.push("/(main)/more" as any),
-              },
-            ].map((action) => (
-              <Pressable
-                key={action.label}
-                style={styles.actionItem}
-                onPress={action.onPress}
-              >
-                <LinearGradient
-                  colors={["rgba(99,102,241,0.2)", "rgba(139,92,246,0.1)"]}
-                  style={styles.actionIcon}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Ionicons
-                    name={action.icon as any}
-                    size={22}
-                    color={T.primary}
-                  />
-                </LinearGradient>
-                <Text style={styles.actionLabel}>{action.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {/* Recent Invoices */}
-          <View style={styles.recentHeader}>
-            <Text style={styles.sectionTitle}>Recent Invoices</Text>
-            <Pressable onPress={() => router.push("/(main)/invoices" as any)}>
-              <Text style={styles.seeAll}>See all</Text>
-            </Pressable>
-          </View>
-
-          {recentInvoices.length === 0 ? (
-            <GlassCard dark={isDark} style={styles.emptyCard}>
-              <Ionicons
-                name="receipt-outline"
-                size={36}
-                color={T.textMuted}
-                style={{ alignSelf: "center", marginBottom: 8 }}
+    <TabSwipeContainer currentRoute="/(main)">
+      <LinearGradient
+        colors={
+          isDark
+            ? ["#0D0F1E", "#131629", "#0D0F1E"]
+            : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
+        }
+        style={styles.root}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isLoading}
+                onRefresh={reload}
+                tintColor={T.primary}
               />
-              <Text style={styles.emptyText}>No invoices yet</Text>
-              <Text style={styles.emptySubtext}>
-                Tap + to create your first invoice
-              </Text>
-            </GlassCard>
-          ) : (
-            recentInvoices.map((invoice: any) => (
+            }
+          >
+            {/* Header */}
+            <View style={styles.headerRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.greeting}>Good morning,</Text>
+                <Text style={styles.name}>{firstName}</Text>
+              </View>
               <Pressable
-                key={invoice.$id}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(main)/invoices/[id]" as any,
-                    params: { id: invoice.$id },
-                  })
-                }
+                onPress={() => router.push("/(main)/more" as any)}
+                hitSlop={8}
               >
-                <GlassCard dark={isDark} style={styles.invoiceRow} noPadding>
-                  <View style={styles.invoiceInner}>
-                    <Avatar name={invoice.customerName} size={40} />
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={styles.invoiceCustomer}>
-                        {invoice.customerName}
-                      </Text>
-                      <Text style={styles.invoiceNum}>
-                        {invoice.invoiceNumber}
-                      </Text>
-                    </View>
-                    <View style={{ alignItems: "flex-end", gap: 6 }}>
-                      <Text style={styles.invoiceAmount}>
-                        {formatCurrency(invoice.totalAmount)}
-                      </Text>
-                      <StatusBadge status={statusToVariant(invoice.status)} />
-                    </View>
-                  </View>
-                </GlassCard>
+                <Avatar name={user?.name} size={44} />
               </Pressable>
-            ))
-          )}
+            </View>
 
-          <View style={{ height: Platform.OS === "ios" ? 100 : 80 }} />
-        </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+            {/* Business pill */}
+            <LinearGradient
+              colors={["rgba(99,102,241,0.25)", "rgba(139,92,246,0.15)"]}
+              style={styles.businessPill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Ionicons name="business-outline" size={16} color={T.primary} />
+              <Text style={styles.businessName}>{currentBusiness.name}</Text>
+              <Ionicons
+                name="chevron-down-outline"
+                size={14}
+                color={T.textMuted}
+              />
+            </LinearGradient>
+
+            {/* KPI Cards */}
+            <View style={styles.kpiGrid}>
+              <MetricCard
+                title="Total Revenue"
+                value={formatCurrency(totalRevenue)}
+                subtitle={`${paidCount} invoices paid`}
+                gradient={Gradients.primary}
+                style={styles.kpiWide}
+              />
+              <MetricCard
+                title="Pending"
+                value={formatCurrency(totalPending)}
+                subtitle="Outstanding balance"
+                dark={isDark}
+                style={styles.kpiHalf}
+              />
+              <MetricCard
+                title="Invoices"
+                value={String(totalInvoices)}
+                subtitle="This month"
+                dark={isDark}
+                style={styles.kpiHalf}
+              />
+            </View>
+
+            {/* Quick Actions */}
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <View style={styles.actionRow}>
+              {[
+                {
+                  icon: "add-circle-outline",
+                  label: "New Invoice",
+                  onPress: () => router.push("/(main)/invoices/create" as any),
+                },
+                {
+                  icon: "person-add-outline",
+                  label: "Add Customer",
+                  onPress: () => router.push("/(main)/customers"),
+                },
+                {
+                  icon: "cube-outline",
+                  label: "Add Product",
+                  onPress: () => router.push("/(main)/products"),
+                },
+                {
+                  icon: "bar-chart-outline",
+                  label: "Reports",
+                  onPress: () => router.push("/(main)/more" as any),
+                },
+              ].map((action) => (
+                <Pressable
+                  key={action.label}
+                  style={styles.actionItem}
+                  onPress={action.onPress}
+                >
+                  <LinearGradient
+                    colors={["rgba(99,102,241,0.2)", "rgba(139,92,246,0.1)"]}
+                    style={styles.actionIcon}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Ionicons
+                      name={action.icon as any}
+                      size={22}
+                      color={T.primary}
+                    />
+                  </LinearGradient>
+                  <Text style={styles.actionLabel}>{action.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Recent Invoices */}
+            <View style={styles.recentHeader}>
+              <Text style={styles.sectionTitle}>Recent Invoices</Text>
+              <Pressable onPress={() => router.push("/(main)/invoices" as any)}>
+                <Text style={styles.seeAll}>See all</Text>
+              </Pressable>
+            </View>
+
+            {recentInvoices.length === 0 ? (
+              <GlassCard dark={isDark} style={styles.emptyCard}>
+                <Ionicons
+                  name="receipt-outline"
+                  size={36}
+                  color={T.textMuted}
+                  style={{ alignSelf: "center", marginBottom: 8 }}
+                />
+                <Text style={styles.emptyText}>No invoices yet</Text>
+                <Text style={styles.emptySubtext}>
+                  Tap + to create your first invoice
+                </Text>
+              </GlassCard>
+            ) : (
+              recentInvoices.map((invoice: any) => (
+                <Pressable
+                  key={invoice.$id}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(main)/invoices/[id]" as any,
+                      params: { id: invoice.$id },
+                    })
+                  }
+                >
+                  <GlassCard dark={isDark} style={styles.invoiceRow} noPadding>
+                    <View style={styles.invoiceInner}>
+                      <Avatar name={invoice.customerName} size={40} />
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <Text style={styles.invoiceCustomer}>
+                          {invoice.customerName}
+                        </Text>
+                        <Text style={styles.invoiceNum}>
+                          {invoice.invoiceNumber}
+                        </Text>
+                      </View>
+                      <View style={{ alignItems: "flex-end", gap: 6 }}>
+                        <Text style={styles.invoiceAmount}>
+                          {formatCurrency(invoice.totalAmount)}
+                        </Text>
+                        <StatusBadge status={statusToVariant(invoice.status)} />
+                      </View>
+                    </View>
+                  </GlassCard>
+                </Pressable>
+              ))
+            )}
+
+            <View style={{ height: Platform.OS === "ios" ? 100 : 80 }} />
+          </ScrollView>
+        </SafeAreaView>
+      </LinearGradient>
+    </TabSwipeContainer>
   );
 }
 

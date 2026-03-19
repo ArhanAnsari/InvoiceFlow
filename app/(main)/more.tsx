@@ -2,6 +2,7 @@ import { Colors, Spacing, Typography } from "@/constants/theme";
 import { useIsDark, useTheme } from "@/hooks/use-theme";
 import { Avatar } from "@/src/components/ui/Avatar";
 import { GlassCard } from "@/src/components/ui/GlassCard";
+import { TabSwipeContainer } from "@/src/components/ui/TabSwipeContainer";
 import { useAuthStore } from "@/src/store/authStore";
 import { useBusinessStore } from "@/src/store/businessStore";
 import { useUIStore } from "@/src/store/uiStore";
@@ -10,14 +11,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
+    Alert,
     Platform,
     Pressable,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface MenuItemProps {
   icon: string;
@@ -68,128 +70,134 @@ export default function MoreScreen() {
     setThemeMode(themeMode === "dark" ? "light" : "dark");
   };
 
+  const showComingSoon = (feature: string) => {
+    Alert.alert(feature, "This feature is coming soon.");
+  };
+
   return (
-    <LinearGradient
-      colors={
-        isDark
-          ? ["#0D0F1E", "#131629", "#0D0F1E"]
-          : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
-      }
-      style={styles.root}
-    >
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scroll}
-        >
-          {/* Profile section */}
-          <GlassCard dark={isDark} style={styles.profileCard}>
-            <Avatar name={user?.name} size={60} />
-            <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={styles.profileName}>{user?.name ?? "User"}</Text>
-              <Text style={styles.profileEmail}>{user?.email}</Text>
-              {currentBusiness && (
-                <View style={styles.planBadge}>
-                  <Text style={styles.planText}>
-                    {(currentBusiness.planType ?? "free").toUpperCase()}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </GlassCard>
-
-          {/* Business */}
-          <Text style={styles.sectionLabel}>Business</Text>
-          <GlassCard dark={isDark} noPadding style={styles.group}>
-            <MenuItem
-              icon="business-outline"
-              label="Business Profile"
-              subtitle={currentBusiness?.name}
-              onPress={() => {}}
-            />
-            <View style={styles.divider} />
-            <MenuItem
-              icon="people-outline"
-              label="Staff & Roles"
-              subtitle="Manage team members"
-              onPress={() => {}}
-            />
-            <View style={styles.divider} />
-            <MenuItem
-              icon="star-outline"
-              label="Upgrade Plan"
-              subtitle="Get Pro or Enterprise"
-              onPress={() => {}}
-            />
-          </GlassCard>
-
-          {/* Reports */}
-          <Text style={styles.sectionLabel}>Reports & Data</Text>
-          <GlassCard dark={isDark} noPadding style={styles.group}>
-            <MenuItem
-              icon="bar-chart-outline"
-              label="Sales Report"
-              onPress={() => {}}
-            />
-            <View style={styles.divider} />
-            <MenuItem
-              icon="download-outline"
-              label="Export Data"
-              subtitle="Export invoices as CSV / PDF"
-              onPress={() => {}}
-            />
-            <View style={styles.divider} />
-            <MenuItem
-              icon="cloud-upload-outline"
-              label="Backup"
-              subtitle="Backup to cloud"
-              onPress={() => {}}
-            />
-          </GlassCard>
-
-          {/* Settings */}
-          <Text style={styles.sectionLabel}>Settings</Text>
-          <GlassCard dark={isDark} noPadding style={styles.group}>
-            <MenuItem
-              icon={themeMode === "dark" ? "sunny-outline" : "moon-outline"}
-              label={
-                themeMode === "dark" ? "Switch to Light" : "Switch to Dark"
-              }
-              onPress={toggleTheme}
-            />
-            <View style={styles.divider} />
-            <MenuItem
-              icon="notifications-outline"
-              label="Notifications"
-              onPress={() => {}}
-            />
-            <View style={styles.divider} />
-            <MenuItem
-              icon="help-circle-outline"
-              label="Help & Support"
-              onPress={() => {}}
-            />
-          </GlassCard>
-
-          {/* Logout */}
-          <GlassCard
-            dark={isDark}
-            noPadding
-            style={[styles.group, { marginTop: 8 }]}
+    <TabSwipeContainer currentRoute="/(main)/more">
+      <LinearGradient
+        colors={
+          isDark
+            ? ["#0D0F1E", "#131629", "#0D0F1E"]
+            : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
+        }
+        style={styles.root}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scroll}
           >
-            <MenuItem
-              icon="log-out-outline"
-              label="Sign Out"
-              onPress={logout}
-              danger
-            />
-          </GlassCard>
+            {/* Profile section */}
+            <GlassCard dark={isDark} style={styles.profileCard}>
+              <Avatar name={user?.name} size={60} />
+              <View style={{ flex: 1, marginLeft: 14 }}>
+                <Text style={styles.profileName}>{user?.name ?? "User"}</Text>
+                <Text style={styles.profileEmail}>{user?.email}</Text>
+                {currentBusiness && (
+                  <View style={styles.planBadge}>
+                    <Text style={styles.planText}>
+                      {(currentBusiness.planType ?? "free").toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </GlassCard>
 
-          <Text style={styles.version}>InvoiceFlow v2.0.0</Text>
-          <View style={{ height: Platform.OS === "ios" ? 100 : 80 }} />
-        </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+            {/* Business */}
+            <Text style={styles.sectionLabel}>Business</Text>
+            <GlassCard dark={isDark} noPadding style={styles.group}>
+              <MenuItem
+                icon="business-outline"
+                label="Business Profile"
+                subtitle={currentBusiness?.name}
+                onPress={() => router.push("/(auth)/business-setup" as any)}
+              />
+              <View style={styles.divider} />
+              <MenuItem
+                icon="people-outline"
+                label="Staff & Roles"
+                subtitle="Manage team members"
+                onPress={() => showComingSoon("Staff & Roles")}
+              />
+              <View style={styles.divider} />
+              <MenuItem
+                icon="star-outline"
+                label="Upgrade Plan"
+                subtitle="Get Pro or Enterprise"
+                onPress={() => showComingSoon("Upgrade Plan")}
+              />
+            </GlassCard>
+
+            {/* Reports */}
+            <Text style={styles.sectionLabel}>Reports & Data</Text>
+            <GlassCard dark={isDark} noPadding style={styles.group}>
+              <MenuItem
+                icon="bar-chart-outline"
+                label="Sales Report"
+                onPress={() => router.push("/(main)/invoices" as any)}
+              />
+              <View style={styles.divider} />
+              <MenuItem
+                icon="download-outline"
+                label="Export Data"
+                subtitle="Export invoices as CSV / PDF"
+                onPress={() => showComingSoon("Export Data")}
+              />
+              <View style={styles.divider} />
+              <MenuItem
+                icon="cloud-upload-outline"
+                label="Backup"
+                subtitle="Backup to cloud"
+                onPress={() => showComingSoon("Backup")}
+              />
+            </GlassCard>
+
+            {/* Settings */}
+            <Text style={styles.sectionLabel}>Settings</Text>
+            <GlassCard dark={isDark} noPadding style={styles.group}>
+              <MenuItem
+                icon={themeMode === "dark" ? "sunny-outline" : "moon-outline"}
+                label={
+                  themeMode === "dark" ? "Switch to Light" : "Switch to Dark"
+                }
+                onPress={toggleTheme}
+              />
+              <View style={styles.divider} />
+              <MenuItem
+                icon="notifications-outline"
+                label="Notifications"
+                onPress={() => showComingSoon("Notifications")}
+              />
+              <View style={styles.divider} />
+              <MenuItem
+                icon="help-circle-outline"
+                label="Help & Support"
+                onPress={() => showComingSoon("Help & Support")}
+              />
+            </GlassCard>
+
+            {/* Logout */}
+            <GlassCard
+              dark={isDark}
+              noPadding
+              style={[styles.group, { marginTop: 8 }]}
+            >
+              <MenuItem
+                icon="log-out-outline"
+                label="Sign Out"
+                onPress={logout}
+                danger
+              />
+            </GlassCard>
+
+            <Text style={styles.version}>InvoiceFlow v2.0.0</Text>
+            <View style={{ height: Platform.OS === "ios" ? 100 : 80 }} />
+          </ScrollView>
+        </SafeAreaView>
+      </LinearGradient>
+    </TabSwipeContainer>
   );
 }
 

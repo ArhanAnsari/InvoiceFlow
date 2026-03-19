@@ -25,11 +25,43 @@ export interface Invoice {
   date: string;
   totalAmount: number;
   items: InvoiceItem[];
-  status: "paid" | "unpaid" | "overdue";
+  status: "paid" | "unpaid" | "partial" | "overdue" | "cancelled";
   createdAt: string;
   updatedAt: string;
   syncStatus: "synced" | "pending" | "error";
 }
+
+const parseInvoiceItems = (items: unknown): InvoiceItem[] => {
+  if (Array.isArray(items)) return items as InvoiceItem[];
+  if (typeof items !== "string") return [];
+
+  try {
+    const parsed = JSON.parse(items);
+    return Array.isArray(parsed) ? (parsed as InvoiceItem[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const normalizeInvoice = (raw: any): Invoice => {
+  const now = new Date().toISOString();
+  return {
+    $id: raw?.$id ?? raw?.id,
+    businessId: raw?.businessId,
+    customerId: raw?.customerId,
+    customerName: raw?.customerName ?? "",
+    invoiceNumber: raw?.invoiceNumber ?? "",
+    date: raw?.date ?? raw?.invoiceDate ?? raw?.$createdAt ?? now,
+    totalAmount: Number(raw?.totalAmount ?? 0),
+    items: parseInvoiceItems(raw?.items),
+    status: (raw?.status ?? "unpaid") as Invoice["status"],
+    createdAt: raw?.createdAt ?? raw?.$createdAt ?? now,
+    updatedAt: raw?.updatedAt ?? raw?.$updatedAt ?? now,
+    syncStatus:
+      raw?.syncStatus ??
+      (raw?.isSynced === 1 || raw?.isSynced === true ? "synced" : "pending"),
+  };
+};
 
 interface InvoiceState {
   invoices: Invoice[];
@@ -56,10 +88,7 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
         [businessId],
       );
 
-      const parsedLocalInvoices = localInvoices.map((inv) => ({
-        ...inv,
-        items: JSON.parse(inv.detailsJson || "[]"),
-      }));
+      const parsedLocalInvoices = localInvoices.map(normalizeInvoice);
 
       if (parsedLocalInvoices.length > 0) {
         set({ invoices: parsedLocalInvoices, isLoading: false });
@@ -70,19 +99,18 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
         const response = await databases.listDocuments(
           DATABASE_ID,
           INVOICES_COLLECTION_ID,
-          [Query.equal("businessId", businessId), Query.orderDesc("date")],
+          [
+            Query.equal("businessId", businessId),
+            Query.orderDesc("$createdAt"),
+          ],
         );
 
-        const remoteInvoices = response.documents.map((doc) => ({
-          ...doc,
-          items: JSON.parse(doc.detailsJson || "[]"),
-        })) as unknown as Invoice[];
+        const remoteInvoices = response.documents.map(normalizeInvoice);
 
         // Update local DB with remote data
         for (const invoice of remoteInvoices) {
           await db.runAsync(
-            `INSERT OR REPLACE INTO invoices ($id, businessId, customerId, customerName, invoiceNumber, date, totalAmount, detailsJson, status, $createdAt, $updatedAt, isSynced)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+            'INSERT OR REPLACE INTO invoices ("$id", businessId, customerId, customerName, invoiceNumber, date, totalAmount, status, items, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
             [
               invoice.$id,
               invoice.businessId,
@@ -91,8 +119,8 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
               invoice.invoiceNumber,
               invoice.date,
               invoice.totalAmount,
-              JSON.stringify(invoice.items),
               invoice.status,
+              JSON.stringify(invoice.items),
               invoice.createdAt,
               invoice.updatedAt,
             ],
@@ -118,24 +146,38 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
   createInvoice: async (invoiceData) => {
     set({ isLoading: true, error: null });
     try {
+      if (!invoiceData.businessId) {
+        throw new Error("Business context is required to create an invoice.");
+      }
+
       const tempId = ID.unique();
       const now = new Date().toISOString();
+      const items = parseInvoiceItems((invoiceData as any).items);
+      const invoiceDate =
+        (invoiceData as any).date ?? (invoiceData as any).invoiceDate ?? now;
+      const invoiceNumber =
+        (invoiceData as any).invoiceNumber ??
+        `INV-${Date.now().toString().slice(-6)}`;
+      const totalAmount = Number((invoiceData as any).totalAmount ?? 0);
+      const status = ((invoiceData as any).status ??
+        "unpaid") as Invoice["status"];
 
-      const newInvoice: Invoice = {
+      const newInvoice = normalizeInvoice({
         ...invoiceData,
         $id: tempId,
+        date: invoiceDate,
+        invoiceNumber,
+        totalAmount,
+        status,
+        items,
         createdAt: now,
         updatedAt: now,
         syncStatus: "pending",
-      };
-
-      // Prepare for storage (stringify items)
-      const detailsJson = JSON.stringify(newInvoice.items);
+      });
 
       // 1. Save locally
       await db.runAsync(
-        `INSERT INTO invoices ($id, businessId, customerId, customerName, invoiceNumber, date, totalAmount, detailsJson, status, $createdAt, $updatedAt, isSynced)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+        'INSERT INTO invoices ("$id", businessId, customerId, customerName, invoiceNumber, date, totalAmount, status, items, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
         [
           newInvoice.$id,
           newInvoice.businessId,
@@ -144,8 +186,8 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
           newInvoice.invoiceNumber,
           newInvoice.date,
           newInvoice.totalAmount,
-          detailsJson,
           newInvoice.status,
+          JSON.stringify(newInvoice.items),
           newInvoice.createdAt,
           newInvoice.updatedAt,
         ],
@@ -158,11 +200,26 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
       }));
 
       // 2. Queue for sync
-      // We need to flatten the object for Appwrite optimization if needed,
-      // but for now we sync the whole object knowing the backend expects detailsJson
       const syncPayload = {
-        ...newInvoice,
-        detailsJson, // Override the array with string string for backend
+        businessId: newInvoice.businessId,
+        customerId: newInvoice.customerId,
+        customerName: newInvoice.customerName,
+        invoiceNumber: newInvoice.invoiceNumber,
+        invoiceDate,
+        dueDate: (invoiceData as any).dueDate ?? undefined,
+        items: JSON.stringify(newInvoice.items),
+        subTotal: Number((invoiceData as any).subTotal ?? 0),
+        discountType: (invoiceData as any).discountType ?? "none",
+        discountValue: Number((invoiceData as any).discountValue ?? 0),
+        discountAmount: Number((invoiceData as any).discountAmount ?? 0),
+        totalTax: Number((invoiceData as any).totalTax ?? 0),
+        totalAmount: newInvoice.totalAmount,
+        paidAmount: Number((invoiceData as any).paidAmount ?? 0),
+        balanceDue: Number(
+          (invoiceData as any).balanceDue ?? newInvoice.totalAmount,
+        ),
+        status: newInvoice.status,
+        notes: (invoiceData as any).notes ?? undefined,
       };
 
       await addToSyncQueue("invoices", newInvoice.$id, "create", syncPayload);

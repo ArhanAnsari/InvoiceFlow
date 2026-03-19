@@ -5,10 +5,12 @@ import { EmptyState } from "@/src/components/ui/EmptyState";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { PrimaryButton } from "@/src/components/ui/PrimaryButton";
 import { SearchBar } from "@/src/components/ui/SearchBar";
+import { TabSwipeContainer } from "@/src/components/ui/TabSwipeContainer";
 import { useBusinessStore } from "@/src/store/businessStore";
 import { useProductStore } from "@/src/store/productStore";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     FlatList,
@@ -16,16 +18,17 @@ import {
     Modal,
     Platform,
     Pressable,
-    SafeAreaView,
     StyleSheet,
     Text,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProductsScreen() {
   const T = useTheme();
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(T), [T]);
+  const router = useRouter();
   const { products, fetchProducts, addProduct, isLoading } =
     useProductStore() as any;
   const { currentBusiness } = useBusinessStore();
@@ -71,6 +74,12 @@ export default function ProductsScreen() {
   };
 
   const handleAdd = async () => {
+    if (!currentBusiness?.$id) {
+      closeModal();
+      router.push("/(auth)/business-setup" as any);
+      return;
+    }
+
     if (!name.trim() || !price.trim()) return;
     await addProduct({
       businessId: currentBusiness?.$id,
@@ -87,183 +96,215 @@ export default function ProductsScreen() {
     closeModal();
   };
 
-  return (
-    <LinearGradient
-      colors={
-        isDark
-          ? ["#0D0F1E", "#131629", "#0D0F1E"]
-          : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
-      }
-      style={styles.root}
-    >
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Products</Text>
-            <Text style={styles.subtitle}>{filtered.length} items</Text>
-          </View>
-          <Pressable
-            style={styles.addBtn}
-            onPress={() => setModalVisible(true)}
-          >
-            <Ionicons name="add" size={24} color="#fff" />
-          </Pressable>
-        </View>
-
-        <View style={styles.searchWrap}>
-          <SearchBar
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search products�"
-            dark={isDark}
-          />
-        </View>
-
-        {filtered.length === 0 ? (
+  if (!currentBusiness) {
+    return (
+      <TabSwipeContainer currentRoute="/(main)/products">
+        <LinearGradient
+          colors={
+            isDark
+              ? ["#0D0F1E", "#131629", "#0D0F1E"]
+              : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
+          }
+          style={styles.root}
+        >
           <EmptyState
             icon={
-              <Ionicons name="cube-outline" size={56} color={T.textMuted} />
+              <Ionicons name="business-outline" size={56} color={T.textMuted} />
             }
-            title={query ? "No results found" : "No products yet"}
-            subtitle={
-              query
-                ? "Try a different search."
-                : "Add your products or services to create invoices."
-            }
-            ctaLabel={query ? undefined : "Add Product"}
-            onCta={query ? undefined : () => setModalVisible(true)}
+            title="Business setup required"
+            subtitle="Set up your business before adding products."
+            ctaLabel="Set up business"
+            onCta={() => router.push("/(auth)/business-setup" as any)}
             dark={isDark}
           />
-        ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.$id}
-            contentContainerStyle={styles.list}
-            numColumns={2}
-            columnWrapperStyle={styles.columns}
-            showsVerticalScrollIndicator={false}
-            refreshing={isLoading}
-            onRefresh={load}
-            renderItem={({ item }) => (
-              <GlassCard dark={isDark} style={styles.productCard}>
-                <View style={styles.productIcon}>
-                  <Ionicons
-                    name={item.isService ? "briefcase-outline" : "cube-outline"}
-                    size={22}
-                    color={T.primary}
-                  />
-                </View>
-                <Text style={styles.productName} numberOfLines={2}>
-                  {item.name}
-                </Text>
-                <Text style={styles.productPrice}>
-                  ?{parseFloat(item.price).toLocaleString()}
-                </Text>
-                <View style={styles.productMeta}>
-                  <Text style={styles.productUnit}>{item.unit}</Text>
-                  <Text style={styles.productTax}>{item.taxRate}% GST</Text>
-                </View>
-                {!item.isService && (
-                  <View
-                    style={[
-                      styles.stockBadge,
-                      item.stock <= (item.lowStockThreshold ?? 5) &&
-                        styles.stockLow,
-                    ]}
-                  >
-                    <Text style={styles.stockText}>
-                      {item.stock <= (item.lowStockThreshold ?? 5) ? "? " : ""}
-                      {item.stock} {item.unit}
-                    </Text>
-                  </View>
-                )}
-              </GlassCard>
-            )}
-          />
-        )}
+        </LinearGradient>
+      </TabSwipeContainer>
+    );
+  }
 
-        {/* Add Modal */}
-        <Modal
-          visible={modalVisible}
-          animationType="slide"
-          transparent
-          onRequestClose={closeModal}
-        >
-          <View style={styles.modalOverlay}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
+  return (
+    <TabSwipeContainer currentRoute="/(main)/products">
+      <LinearGradient
+        colors={
+          isDark
+            ? ["#0D0F1E", "#131629", "#0D0F1E"]
+            : ["#EEF2FF", "#F5F7FA", "#F0F4FF"]
+        }
+        style={styles.root}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.title}>Products</Text>
+              <Text style={styles.subtitle}>{filtered.length} items</Text>
+            </View>
+            <Pressable
+              style={styles.addBtn}
+              onPress={() => setModalVisible(true)}
             >
-              <GlassCard dark={isDark} style={styles.modalCard}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Add Product</Text>
-                  <Pressable onPress={closeModal} hitSlop={10}>
-                    <Ionicons name="close" size={22} color={T.textMuted} />
-                  </Pressable>
-                </View>
-                <ThemedInput
-                  label="Product Name *"
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="e.g. Widget Pro"
-                />
-                <View style={{ flexDirection: "row", gap: 12 }}>
-                  <View style={{ flex: 1 }}>
-                    <ThemedInput
-                      label="Selling Price *"
-                      value={price}
-                      onChangeText={setPrice}
-                      placeholder="0.00"
-                      keyboardType="decimal-pad"
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <ThemedInput
-                      label="Tax Rate %"
-                      value={taxRate}
-                      onChangeText={setTaxRate}
-                      placeholder="18"
-                      keyboardType="decimal-pad"
-                    />
-                  </View>
-                </View>
-                <View style={{ flexDirection: "row", gap: 12 }}>
-                  <View style={{ flex: 1 }}>
-                    <ThemedInput
-                      label="Unit"
-                      value={unit}
-                      onChangeText={setUnit}
-                      placeholder="pcs"
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <ThemedInput
-                      label="Stock"
-                      value={stock}
-                      onChangeText={setStock}
-                      placeholder="0"
-                      keyboardType="number-pad"
-                    />
-                  </View>
-                </View>
-                <ThemedInput
-                  label="HSN Code"
-                  value={hsnCode}
-                  onChangeText={setHsnCode}
-                  placeholder="e.g. 8517"
-                />
-                <PrimaryButton
-                  label={isLoading ? "Adding�" : "Add Product"}
-                  onPress={handleAdd}
-                  isLoading={isLoading}
-                  size="lg"
-                  style={{ width: "100%" }}
-                />
-              </GlassCard>
-            </KeyboardAvoidingView>
+              <Ionicons name="add" size={24} color="#fff" />
+            </Pressable>
           </View>
-        </Modal>
-      </SafeAreaView>
-    </LinearGradient>
+
+          <View style={styles.searchWrap}>
+            <SearchBar
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search products�"
+              dark={isDark}
+            />
+          </View>
+
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon={
+                <Ionicons name="cube-outline" size={56} color={T.textMuted} />
+              }
+              title={query ? "No results found" : "No products yet"}
+              subtitle={
+                query
+                  ? "Try a different search."
+                  : "Add your products or services to create invoices."
+              }
+              ctaLabel={query ? undefined : "Add Product"}
+              onCta={query ? undefined : () => setModalVisible(true)}
+              dark={isDark}
+            />
+          ) : (
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item.$id}
+              contentContainerStyle={styles.list}
+              numColumns={2}
+              columnWrapperStyle={styles.columns}
+              showsVerticalScrollIndicator={false}
+              refreshing={isLoading}
+              onRefresh={load}
+              renderItem={({ item }) => (
+                <GlassCard dark={isDark} style={styles.productCard}>
+                  <View style={styles.productIcon}>
+                    <Ionicons
+                      name={
+                        item.isService ? "briefcase-outline" : "cube-outline"
+                      }
+                      size={22}
+                      color={T.primary}
+                    />
+                  </View>
+                  <Text style={styles.productName} numberOfLines={2}>
+                    {item.name}
+                  </Text>
+                  <Text style={styles.productPrice}>
+                    ?{parseFloat(item.price).toLocaleString()}
+                  </Text>
+                  <View style={styles.productMeta}>
+                    <Text style={styles.productUnit}>{item.unit}</Text>
+                    <Text style={styles.productTax}>{item.taxRate}% GST</Text>
+                  </View>
+                  {!item.isService && (
+                    <View
+                      style={[
+                        styles.stockBadge,
+                        item.stock <= (item.lowStockThreshold ?? 5) &&
+                          styles.stockLow,
+                      ]}
+                    >
+                      <Text style={styles.stockText}>
+                        {item.stock <= (item.lowStockThreshold ?? 5)
+                          ? "? "
+                          : ""}
+                        {item.stock} {item.unit}
+                      </Text>
+                    </View>
+                  )}
+                </GlassCard>
+              )}
+            />
+          )}
+
+          {/* Add Modal */}
+          <Modal
+            visible={modalVisible}
+            animationType="slide"
+            transparent
+            onRequestClose={closeModal}
+          >
+            <View style={styles.modalOverlay}>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+              >
+                <GlassCard dark={isDark} style={styles.modalCard}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Add Product</Text>
+                    <Pressable onPress={closeModal} hitSlop={10}>
+                      <Ionicons name="close" size={22} color={T.textMuted} />
+                    </Pressable>
+                  </View>
+                  <ThemedInput
+                    label="Product Name *"
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="e.g. Widget Pro"
+                  />
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <ThemedInput
+                        label="Selling Price *"
+                        value={price}
+                        onChangeText={setPrice}
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <ThemedInput
+                        label="Tax Rate %"
+                        value={taxRate}
+                        onChangeText={setTaxRate}
+                        placeholder="18"
+                        keyboardType="decimal-pad"
+                      />
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <ThemedInput
+                        label="Unit"
+                        value={unit}
+                        onChangeText={setUnit}
+                        placeholder="pcs"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <ThemedInput
+                        label="Stock"
+                        value={stock}
+                        onChangeText={setStock}
+                        placeholder="0"
+                        keyboardType="number-pad"
+                      />
+                    </View>
+                  </View>
+                  <ThemedInput
+                    label="HSN Code"
+                    value={hsnCode}
+                    onChangeText={setHsnCode}
+                    placeholder="e.g. 8517"
+                  />
+                  <PrimaryButton
+                    label={isLoading ? "Adding�" : "Add Product"}
+                    onPress={handleAdd}
+                    isLoading={isLoading}
+                    size="lg"
+                    style={{ width: "100%" }}
+                  />
+                </GlassCard>
+              </KeyboardAvoidingView>
+            </View>
+          </Modal>
+        </SafeAreaView>
+      </LinearGradient>
+    </TabSwipeContainer>
   );
 }
 

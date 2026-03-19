@@ -12,12 +12,12 @@ import React, { useMemo } from "react";
 import {
     Platform,
     Pressable,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function statusVariant(s: string): StatusVariant {
   if (s === "paid") return "paid";

@@ -1,5 +1,13 @@
 import { create } from "zustand";
-import { COLLECTIONS, databases, DB_ID, ID, Query } from "../services/appwrite";
+import {
+    COLLECTIONS,
+    databases,
+    DB_ID,
+    ID,
+    Permission,
+    Query,
+    Role,
+} from "../services/appwrite";
 import db from "../services/database";
 import { Business, PlanType } from "../types";
 
@@ -23,7 +31,7 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
   isLoading: false,
 
   fetchBusinesses: async (userId: string) => {
-    set({ isLoading: true });
+    set({ isLoading: true, businesses: [], currentBusiness: null });
     try {
       // Fetch from Appwrite
       const response = await databases.listDocuments(
@@ -90,10 +98,17 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
       const newBusiness = {
         ownerId: userId,
         name,
-        gstin,
-        address,
+        gstin: gstin || undefined,
+        address: address || undefined,
         planType: PlanType.FREE,
-        logoFileId: null,
+        currency: "INR",
+        currencySymbol: "₹",
+        invoicePrefix: "INV",
+        invoiceCounter: 0,
+        taxType: "gst",
+        isActive: true,
+        logoFileId: undefined,
+        signatureFileId: undefined,
       };
 
       const response = await databases.createDocument(
@@ -101,6 +116,11 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
         COLLECTIONS.BUSINESSES,
         ID.unique(),
         newBusiness,
+        [
+          Permission.read(Role.user(userId)),
+          Permission.update(Role.user(userId)),
+          Permission.delete(Role.user(userId)),
+        ],
       );
 
       const createdBusiness = response as unknown as Business;

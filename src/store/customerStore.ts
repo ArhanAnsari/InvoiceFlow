@@ -20,6 +20,24 @@ export interface Customer {
   syncStatus: "synced" | "pending" | "error";
 }
 
+const normalizeCustomer = (raw: any): Customer => {
+  const now = new Date().toISOString();
+  return {
+    $id: raw?.$id ?? raw?.id,
+    name: raw?.name ?? "",
+    email: raw?.email ?? undefined,
+    phone: raw?.phone ?? undefined,
+    address: raw?.address ?? undefined,
+    gstin: raw?.gstin ?? undefined,
+    businessId: raw?.businessId,
+    createdAt: raw?.createdAt ?? raw?.$createdAt ?? now,
+    updatedAt: raw?.updatedAt ?? raw?.$updatedAt ?? now,
+    syncStatus:
+      raw?.syncStatus ??
+      (raw?.isSynced === 1 || raw?.isSynced === true ? "synced" : "pending"),
+  };
+};
+
 interface CustomerState {
   customers: Customer[];
   isLoading: boolean;
@@ -42,12 +60,13 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
     try {
       // 1. Try fetching from local SQLite first
       const localCustomers = await db.getAllAsync<Customer>(
-        "SELECT * FROM customers WHERE businessId = ? ORDER BY createdAt DESC",
+        'SELECT * FROM customers WHERE businessId = ? ORDER BY "$createdAt" DESC',
         [businessId],
       );
+      const normalizedLocalCustomers = localCustomers.map(normalizeCustomer);
 
-      if (localCustomers.length > 0) {
-        set({ customers: localCustomers, isLoading: false });
+      if (normalizedLocalCustomers.length > 0) {
+        set({ customers: normalizedLocalCustomers, isLoading: false });
       }
 
       // 2. Fetch from Appwrite in background to sync
@@ -55,24 +74,26 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
         const response = await databases.listDocuments(
           DATABASE_ID,
           CUSTOMERS_COLLECTION_ID,
-          [Query.equal("businessId", businessId), Query.orderDesc("createdAt")],
+          [
+            Query.equal("businessId", businessId),
+            Query.orderDesc("$createdAt"),
+          ],
         );
 
-        const remoteCustomers = response.documents as unknown as Customer[];
+        const remoteCustomers = response.documents.map(normalizeCustomer);
 
         // Update local DB with remote data
         for (const customer of remoteCustomers) {
           await db.runAsync(
-            `INSERT OR REPLACE INTO customers (id, name, email, phone, address, gstin, businessId, createdAt, updatedAt, syncStatus)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'synced')`,
+            'INSERT OR REPLACE INTO customers ("$id", businessId, name, phone, email, address, balance, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
             [
               customer.$id,
-              customer.name,
-              customer.email || null,
-              customer.phone || null,
-              customer.address || null,
-              customer.gstin || null,
               customer.businessId,
+              customer.name,
+              customer.phone || null,
+              customer.email || null,
+              customer.address || null,
+              0,
               customer.createdAt,
               customer.updatedAt,
             ],
@@ -86,7 +107,7 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
           "Could not fetch remote customers, using local data",
           remoteError,
         );
-        if (localCustomers.length === 0) {
+        if (normalizedLocalCustomers.length === 0) {
           set({ isLoading: false }); // No local and no remote
         }
       }
@@ -98,29 +119,32 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   addCustomer: async (customerData) => {
     set({ isLoading: true, error: null });
     try {
+      if (!customerData.businessId) {
+        throw new Error("Business context is required to add a customer.");
+      }
+
       const tempId = ID.unique();
       const now = new Date().toISOString();
 
-      const newCustomer: Customer = {
+      const newCustomer = normalizeCustomer({
         ...customerData,
         $id: tempId,
         createdAt: now,
         updatedAt: now,
         syncStatus: "pending",
-      };
+      });
 
       // 1. Save locally
       await db.runAsync(
-        `INSERT INTO customers (id, name, email, phone, address, gstin, businessId, createdAt, updatedAt, syncStatus)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        'INSERT INTO customers ("$id", businessId, name, phone, email, address, balance, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
         [
           newCustomer.$id,
-          newCustomer.name,
-          newCustomer.email || null,
-          newCustomer.phone || null,
-          newCustomer.address || null,
-          newCustomer.gstin || null,
           newCustomer.businessId,
+          newCustomer.name,
+          newCustomer.phone || null,
+          newCustomer.email || null,
+          newCustomer.address || null,
+          0,
           newCustomer.createdAt,
           newCustomer.updatedAt,
         ],
@@ -133,7 +157,20 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
       }));
 
       // 2. Queue for sync
-      await addToSyncQueue("customers", newCustomer.$id, "create", newCustomer);
+      const syncPayload = {
+        businessId: newCustomer.businessId,
+        name: newCustomer.name,
+        email: newCustomer.email ?? undefined,
+        phone: newCustomer.phone ?? undefined,
+        address: newCustomer.address ?? undefined,
+        gstin: newCustomer.gstin ?? undefined,
+        balance: 0,
+        totalPurchases: 0,
+        totalInvoices: 0,
+        isActive: true,
+      };
+
+      await addToSyncQueue("customers", newCustomer.$id, "create", syncPayload);
       syncEngine.pushChanges(); // Trigger sync
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -148,4 +185,3 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
     // Implementation for delete
   },
 }));
-

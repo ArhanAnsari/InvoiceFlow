@@ -20,6 +20,24 @@ export interface Product {
   syncStatus: "synced" | "pending" | "error";
 }
 
+const normalizeProduct = (raw: any): Product => {
+  const now = new Date().toISOString();
+  return {
+    $id: raw?.$id ?? raw?.id,
+    name: raw?.name ?? "",
+    description: raw?.description ?? undefined,
+    price: Number(raw?.price ?? 0),
+    hsnCode: raw?.hsnCode ?? undefined,
+    taxRate: Number(raw?.taxRate ?? 0),
+    businessId: raw?.businessId,
+    createdAt: raw?.createdAt ?? raw?.$createdAt ?? now,
+    updatedAt: raw?.updatedAt ?? raw?.$updatedAt ?? now,
+    syncStatus:
+      raw?.syncStatus ??
+      (raw?.isSynced === 1 || raw?.isSynced === true ? "synced" : "pending"),
+  };
+};
+
 interface ProductState {
   products: Product[];
   isLoading: boolean;
@@ -42,12 +60,13 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       // 1. Try fetching from local SQLite first
       const localProducts = await db.getAllAsync<Product>(
-        "SELECT * FROM products WHERE businessId = ? ORDER BY createdAt DESC",
+        'SELECT * FROM products WHERE businessId = ? ORDER BY "$createdAt" DESC',
         [businessId],
       );
+      const normalizedLocalProducts = localProducts.map(normalizeProduct);
 
-      if (localProducts.length > 0) {
-        set({ products: localProducts, isLoading: false });
+      if (normalizedLocalProducts.length > 0) {
+        set({ products: normalizedLocalProducts, isLoading: false });
       }
 
       // 2. Fetch from Appwrite in background to sync
@@ -55,24 +74,27 @@ export const useProductStore = create<ProductState>((set, get) => ({
         const response = await databases.listDocuments(
           DATABASE_ID,
           PRODUCTS_COLLECTION_ID,
-          [Query.equal("businessId", businessId), Query.orderDesc("createdAt")],
+          [
+            Query.equal("businessId", businessId),
+            Query.orderDesc("$createdAt"),
+          ],
         );
 
-        const remoteProducts = response.documents as unknown as Product[];
+        const remoteProducts = response.documents.map(normalizeProduct);
 
         // Update local DB with remote data
         for (const product of remoteProducts) {
           await db.runAsync(
-            `INSERT OR REPLACE INTO products (id, name, description, price, hsnCode, taxRate, businessId, createdAt, updatedAt, syncStatus)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'synced')`,
+            'INSERT OR REPLACE INTO products ("$id", businessId, name, price, stock, taxRate, unit, sku, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
             [
               product.$id,
-              product.name,
-              product.description || null,
-              product.price,
-              product.hsnCode || null,
-              product.taxRate,
               product.businessId,
+              product.name,
+              product.price,
+              0,
+              product.taxRate,
+              "pcs",
+              null,
               product.createdAt,
               product.updatedAt,
             ],
@@ -86,7 +108,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
           "Could not fetch remote products, using local data",
           remoteError,
         );
-        if (localProducts.length === 0) {
+        if (normalizedLocalProducts.length === 0) {
           set({ isLoading: false }); // No local and no remote
         }
       }
@@ -98,29 +120,37 @@ export const useProductStore = create<ProductState>((set, get) => ({
   addProduct: async (productData) => {
     set({ isLoading: true, error: null });
     try {
+      if (!productData.businessId) {
+        throw new Error("Business context is required to add a product.");
+      }
+
       const tempId = ID.unique();
       const now = new Date().toISOString();
 
-      const newProduct: Product = {
+      const newProduct = normalizeProduct({
         ...productData,
         $id: tempId,
         createdAt: now,
         updatedAt: now,
         syncStatus: "pending",
-      };
+      });
+
+      const stock = Number((productData as any).stock ?? 0);
+      const unit = (productData as any).unit ?? "pcs";
+      const sku = (productData as any).sku ?? null;
 
       // 1. Save locally
       await db.runAsync(
-        `INSERT INTO products (id, name, description, price, hsnCode, taxRate, businessId, createdAt, updatedAt, syncStatus)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        'INSERT INTO products ("$id", businessId, name, price, stock, taxRate, unit, sku, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
         [
           newProduct.$id,
-          newProduct.name,
-          newProduct.description || null,
-          newProduct.price,
-          newProduct.hsnCode || null,
-          newProduct.taxRate,
           newProduct.businessId,
+          newProduct.name,
+          newProduct.price,
+          stock,
+          newProduct.taxRate,
+          unit,
+          sku,
           newProduct.createdAt,
           newProduct.updatedAt,
         ],
@@ -133,7 +163,21 @@ export const useProductStore = create<ProductState>((set, get) => ({
       }));
 
       // 2. Queue for sync
-      await addToSyncQueue("products", newProduct.$id, "create", newProduct);
+      const syncPayload = {
+        businessId: newProduct.businessId,
+        name: newProduct.name,
+        description: (productData as any).description ?? undefined,
+        price: newProduct.price,
+        taxRate: newProduct.taxRate,
+        stock,
+        unit,
+        sku,
+        hsnCode: (productData as any).hsnCode ?? undefined,
+        isService: (productData as any).isService ?? false,
+        isActive: (productData as any).isActive ?? true,
+      };
+
+      await addToSyncQueue("products", newProduct.$id, "create", syncPayload);
       syncEngine.pushChanges(); // Trigger sync
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -148,4 +192,3 @@ export const useProductStore = create<ProductState>((set, get) => ({
     // Implementation for delete
   },
 }));
-

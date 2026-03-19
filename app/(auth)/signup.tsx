@@ -1,11 +1,7 @@
-import {
-  Colors,
-  Gradients,
-  Spacing,
-  Typography
-} from "@/constants/theme";
+import { Colors, Spacing, Typography } from "@/constants/theme";
 import { useIsDark, useTheme } from "@/hooks/use-theme";
 import { ThemedInput } from "@/src/components/ThemedInput";
+import { BrandLogo } from "@/src/components/ui/BrandLogo";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { PrimaryButton } from "@/src/components/ui/PrimaryButton";
 import { useAuthStore } from "@/src/store/authStore";
@@ -14,14 +10,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 function PasswordStrength({ password }: { password: string }) {
@@ -124,14 +120,7 @@ export default function SignupScreen() {
           </Pressable>
 
           <View style={styles.header}>
-            <LinearGradient
-              colors={Gradients.primary}
-              style={styles.logoCircle}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="receipt-outline" size={32} color="#fff" />
-            </LinearGradient>
+            <BrandLogo size={64} radius={18} />
             <Text style={styles.h1}>Create Account</Text>
             <Text style={styles.subtitle}>Start your 14-day free trial</Text>
           </View>
@@ -253,15 +242,7 @@ function createStyles(T: typeof Colors.dark) {
     },
     back: { marginBottom: Spacing.xl },
     header: { alignItems: "center", marginBottom: Spacing["2xl"] },
-    logoCircle: {
-      width: 64,
-      height: 64,
-      borderRadius: 18,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 14,
-    },
-    h1: { ...Typography.h1, color: T.text, marginBottom: 4 },
+    h1: { ...Typography.h1, color: T.text, marginTop: 14, marginBottom: 4 },
     subtitle: { ...Typography.body, color: T.textMuted },
     card: { marginBottom: Spacing.xl },
     termsRow: {
