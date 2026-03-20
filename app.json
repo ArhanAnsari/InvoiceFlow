@@ -10,7 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/images/app-assets/ios/icons/ios-icon-1024.png"
+      "icon": "./assets/images/app-assets/ios/icons/ios-icon-1024.png",
+      "bundleIdentifier": "com.arhanansari.InvoiceFlow",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "icon": "./assets/images/app-assets/android/icons/android-icon-512.png",
