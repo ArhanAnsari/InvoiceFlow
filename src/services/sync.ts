@@ -1,6 +1,6 @@
 // src/services/sync.ts
 import NetInfo from "@react-native-community/netinfo";
-import { COLLECTIONS, databases, DB_ID, Query } from "./appwrite";
+import { COLLECTIONS, DB_ID, Query, client, databases } from "./appwrite";
 import db, { cleanupSyncQueue, getSyncQueue } from "./database";
 
 export const syncService = {
@@ -119,7 +119,23 @@ export const syncService = {
 
   // 3. LISTEN: Appwrite Realtime (Optional for MVP, good for multi-device)
   subscribe: (businessId: string) => {
-    // Implement client.subscribe(...)
+    const channels = [
+      `databases.${DB_ID}.collections.${COLLECTIONS.CUSTOMERS}.documents`,
+      `databases.${DB_ID}.collections.${COLLECTIONS.PRODUCTS}.documents`,
+      `databases.${DB_ID}.collections.${COLLECTIONS.INVOICES}.documents`,
+    ];
+
+    return client.subscribe(channels, async (response: any) => {
+      const payload = response?.payload;
+      if (!payload?.businessId) return;
+      if (payload.businessId !== businessId) return;
+
+      try {
+        await syncService.pullChanges(businessId);
+      } catch (syncError) {
+        console.error("Realtime sync pull failed", syncError);
+      }
+    });
   },
 };
 

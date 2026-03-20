@@ -1,11 +1,11 @@
 import { ID, Query } from "appwrite";
 import { create } from "zustand";
-import { databases } from "../services/appwrite";
+import { COLLECTIONS, DB_ID, databases } from "../services/appwrite";
 import db, { addToSyncQueue } from "../services/database";
 import { syncEngine } from "../services/sync";
 
-const DATABASE_ID = "invoiceflow_db";
-const CUSTOMERS_COLLECTION_ID = "customers";
+const DATABASE_ID = DB_ID;
+const CUSTOMERS_COLLECTION_ID = COLLECTIONS.CUSTOMERS;
 
 export interface Customer {
   $id: string;
@@ -170,7 +170,12 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
         isActive: true,
       };
 
-      await addToSyncQueue("customers", newCustomer.$id, "create", syncPayload);
+      await addToSyncQueue(
+        CUSTOMERS_COLLECTION_ID,
+        newCustomer.$id,
+        "create",
+        syncPayload,
+      );
       syncEngine.pushChanges(); // Trigger sync
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -178,10 +183,71 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
   },
 
   updateCustomer: async (id, updates) => {
-    // Implementation for update
+    set({ isLoading: true, error: null });
+    try {
+      const existing = get().customers.find((customer) => customer.$id === id);
+      if (!existing) {
+        throw new Error("Customer not found.");
+      }
+
+      const updatedAt = new Date().toISOString();
+      const updatedCustomer = normalizeCustomer({
+        ...existing,
+        ...updates,
+        $id: id,
+        updatedAt,
+        syncStatus: "pending",
+      });
+
+      await db.runAsync(
+        'UPDATE customers SET name = ?, phone = ?, email = ?, address = ?, "$updatedAt" = ?, isSynced = 0 WHERE "$id" = ?',
+        [
+          updatedCustomer.name,
+          updatedCustomer.phone ?? null,
+          updatedCustomer.email ?? null,
+          updatedCustomer.address ?? null,
+          updatedAt,
+          id,
+        ],
+      );
+
+      set((state) => ({
+        customers: state.customers.map((customer) =>
+          customer.$id === id ? updatedCustomer : customer,
+        ),
+        isLoading: false,
+      }));
+
+      const syncPayload = {
+        name: updatedCustomer.name,
+        phone: updatedCustomer.phone ?? undefined,
+        email: updatedCustomer.email ?? undefined,
+        address: updatedCustomer.address ?? undefined,
+        gstin: updatedCustomer.gstin ?? undefined,
+        updatedAt,
+      };
+
+      await addToSyncQueue(CUSTOMERS_COLLECTION_ID, id, "update", syncPayload);
+      syncEngine.pushChanges();
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
   },
 
   deleteCustomer: async (id) => {
-    // Implementation for delete
+    set({ isLoading: true, error: null });
+    try {
+      await db.runAsync('DELETE FROM customers WHERE "$id" = ?', [id]);
+
+      set((state) => ({
+        customers: state.customers.filter((customer) => customer.$id !== id),
+        isLoading: false,
+      }));
+
+      await addToSyncQueue(CUSTOMERS_COLLECTION_ID, id, "delete", {});
+      syncEngine.pushChanges();
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
   },
 }));

@@ -1033,6 +1033,71 @@
           "indexes": []
         },
         {
+          "$id": "monthly_reports",
+          "name": "Monthly Reports",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "attributes": [
+            {
+              "key": "businessId",
+              "type": "string",
+              "size": 36,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "month",
+              "type": "string",
+              "size": 7,
+              "required": true,
+              "array": false
+            },
+            {
+              "key": "totalInvoices",
+              "type": "integer",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "totalRevenue",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "totalTax",
+              "type": "float",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "paidCount",
+              "type": "integer",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "unpaidCount",
+              "type": "integer",
+              "required": true,
+              "default": 0,
+              "array": false
+            },
+            {
+              "key": "createdAt",
+              "type": "datetime",
+              "required": false,
+              "array": false
+            }
+          ],
+          "indexes": []
+        },
+        {
           "$id": "notifications",
           "name": "Notifications",
           "enabled": true,

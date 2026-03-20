@@ -9,11 +9,16 @@ const INVOICES_COLLECTION_ID = COLLECTIONS.INVOICES;
 
 export interface InvoiceItem {
   productId: string;
-  name: string;
+  name?: string;
+  productName?: string;
+  hsnCode?: string;
   quantity: number;
   price: number;
   taxRate: number;
-  total: number;
+  taxAmount?: number;
+  total?: number;
+  totalPrice?: number;
+  unit?: string;
 }
 
 export interface Invoice {
@@ -41,6 +46,30 @@ const parseInvoiceItems = (items: unknown): InvoiceItem[] => {
   } catch {
     return [];
   }
+};
+
+const normalizeInvoiceItemForCollection = (item: InvoiceItem) => {
+  const quantity = Number(item.quantity ?? 0);
+  const price = Number(item.price ?? 0);
+  const taxRate = Number(item.taxRate ?? 0);
+  const taxAmount = Number(
+    item.taxAmount ?? (quantity * price * taxRate) / 100,
+  );
+  const totalPrice = Number(
+    item.totalPrice ?? item.total ?? quantity * price + taxAmount,
+  );
+
+  return {
+    productId: item.productId,
+    productName: item.productName ?? item.name ?? "",
+    hsnCode: item.hsnCode ?? undefined,
+    quantity,
+    unit: item.unit ?? "pcs",
+    price,
+    taxRate,
+    taxAmount,
+    totalPrice,
+  };
 };
 
 const normalizeInvoice = (raw: any): Invoice => {
@@ -222,7 +251,32 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
         notes: (invoiceData as any).notes ?? undefined,
       };
 
-      await addToSyncQueue("invoices", newInvoice.$id, "create", syncPayload);
+      await addToSyncQueue(
+        INVOICES_COLLECTION_ID,
+        newInvoice.$id,
+        "create",
+        syncPayload,
+      );
+
+      for (const item of newInvoice.items) {
+        const normalizedItem = normalizeInvoiceItemForCollection(item);
+
+        await addToSyncQueue(COLLECTIONS.INVOICE_ITEMS, ID.unique(), "create", {
+          invoiceId: newInvoice.$id,
+          businessId: newInvoice.businessId,
+          productId: normalizedItem.productId,
+          productName: normalizedItem.productName,
+          hsnCode: normalizedItem.hsnCode,
+          quantity: normalizedItem.quantity,
+          unit: normalizedItem.unit,
+          price: normalizedItem.price,
+          taxRate: normalizedItem.taxRate,
+          taxAmount: normalizedItem.taxAmount,
+          totalPrice: normalizedItem.totalPrice,
+          createdAt: now,
+        });
+      }
+
       syncEngine.pushChanges(); // Trigger sync
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -230,6 +284,41 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
   },
 
   updateInvoiceStatus: async (id, status) => {
-    // Implementation pending
+    set({ isLoading: true, error: null });
+    try {
+      const existing = get().invoices.find((invoice) => invoice.$id === id);
+      if (!existing) {
+        throw new Error("Invoice not found.");
+      }
+
+      const updatedAt = new Date().toISOString();
+      const updatedInvoice: Invoice = {
+        ...existing,
+        status,
+        updatedAt,
+        syncStatus: "pending",
+      };
+
+      await db.runAsync(
+        'UPDATE invoices SET status = ?, "$updatedAt" = ?, isSynced = 0 WHERE "$id" = ?',
+        [status, updatedAt, id],
+      );
+
+      set((state) => ({
+        invoices: state.invoices.map((invoice) =>
+          invoice.$id === id ? updatedInvoice : invoice,
+        ),
+        isLoading: false,
+      }));
+
+      await addToSyncQueue(INVOICES_COLLECTION_ID, id, "update", {
+        status,
+        updatedAt,
+      });
+
+      syncEngine.pushChanges();
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
   },
 }));

@@ -10,19 +10,19 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoading } = useAuthStore() as any;
+  const { login, sendOTP, verifyOTP, isLoading } = useAuthStore() as any;
   const T = useTheme();
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(T), [T]);
@@ -30,6 +30,11 @@ export default function LoginScreen() {
   const [tab, setTab] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpUserId, setOtpUserId] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
@@ -41,6 +46,42 @@ export default function LoginScreen() {
       await login(email.trim(), password);
     } catch (e: any) {
       Alert.alert("Login Failed", e?.message ?? "Invalid credentials");
+    }
+  };
+
+  const handleSendOtp = async () => {
+    const normalized = phone.trim();
+    if (!normalized) {
+      Alert.alert("Missing Fields", "Please enter your phone number.");
+      return;
+    }
+
+    setOtpLoading(true);
+    try {
+      const userId = await sendOTP(normalized);
+      setOtpUserId(userId);
+      setOtpSent(true);
+      Alert.alert("OTP Sent", "Enter the OTP you received to continue.");
+    } catch (e: any) {
+      Alert.alert("OTP Failed", e?.message ?? "Unable to send OTP.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpUserId || !otp.trim()) {
+      Alert.alert("Missing Fields", "Please enter the OTP.");
+      return;
+    }
+
+    setOtpLoading(true);
+    try {
+      await verifyOTP(otpUserId, otp.trim());
+    } catch (e: any) {
+      Alert.alert("Verification Failed", e?.message ?? "Invalid OTP.");
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -86,7 +127,12 @@ export default function LoginScreen() {
                 <Pressable
                   key={t}
                   style={[styles.tab, tab === t && styles.tabActive]}
-                  onPress={() => setTab(t)}
+                  onPress={() => {
+                    setTab(t);
+                    setOtp("");
+                    setOtpSent(false);
+                    setOtpUserId("");
+                  }}
                 >
                   <Text
                     style={[
@@ -147,27 +193,71 @@ export default function LoginScreen() {
                 />
               </>
             ) : (
-              <ThemedInput
-                label="Phone Number"
-                placeholder="+91 98765 43210"
-                keyboardType="phone-pad"
-                leftIcon={
-                  <Ionicons name="call-outline" size={18} color={T.textMuted} />
-                }
-              />
+              <>
+                <ThemedInput
+                  label="Phone Number"
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="+91 98765 43210"
+                  keyboardType="phone-pad"
+                  leftIcon={
+                    <Ionicons
+                      name="call-outline"
+                      size={18}
+                      color={T.textMuted}
+                    />
+                  }
+                />
+                {otpSent && (
+                  <ThemedInput
+                    label="OTP"
+                    value={otp}
+                    onChangeText={setOtp}
+                    placeholder="Enter 6-digit OTP"
+                    keyboardType="number-pad"
+                    leftIcon={
+                      <Ionicons
+                        name="key-outline"
+                        size={18}
+                        color={T.textMuted}
+                      />
+                    }
+                  />
+                )}
+              </>
             )}
 
-            <Pressable
-              style={styles.forgotRow}
-              onPress={() => router.push("/(auth)/forgot-password" as any)}
-            >
-              <Text style={styles.forgotText}>Forgot password?</Text>
-            </Pressable>
+            {tab === "email" ? (
+              <Pressable
+                style={styles.forgotRow}
+                onPress={() => router.push("/(auth)/forgot-password" as any)}
+              >
+                <Text style={styles.forgotText}>Forgot password?</Text>
+              </Pressable>
+            ) : null}
 
             <PrimaryButton
-              label={isLoading ? "Signing in" : "Sign in"}
-              onPress={handleLogin}
-              isLoading={isLoading}
+              label={
+                tab === "email"
+                  ? isLoading
+                    ? "Signing in"
+                    : "Sign in"
+                  : otpSent
+                    ? otpLoading
+                      ? "Verifying OTP"
+                      : "Verify OTP"
+                    : otpLoading
+                      ? "Sending OTP"
+                      : "Send OTP"
+              }
+              onPress={
+                tab === "email"
+                  ? handleLogin
+                  : otpSent
+                    ? handleVerifyOtp
+                    : handleSendOtp
+              }
+              isLoading={tab === "email" ? isLoading : otpLoading}
               size="lg"
               dark={isDark}
               style={styles.cta}

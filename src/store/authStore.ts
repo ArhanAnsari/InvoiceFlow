@@ -9,6 +9,9 @@ interface AuthState {
   isLoading: boolean;
   checkSession: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  sendOTP: (phone: string) => Promise<string>;
+  verifyOTP: (userId: string, otp: string) => Promise<void>;
+  sendPasswordRecovery: (email: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -49,6 +52,22 @@ export const useAuthStore = create<AuthState>((set) => ({
     const user = await account.get();
     set({ user });
     router.replace("/(main)");
+  },
+  sendOTP: async (phone: string) => {
+    const token = await account.createPhoneToken(ID.unique(), phone);
+    return token.userId;
+  },
+  verifyOTP: async (userId: string, otp: string) => {
+    await account.createSession(userId, otp);
+    const user = await account.get();
+    set({ user });
+    router.replace("/(main)");
+  },
+  sendPasswordRecovery: async (email: string) => {
+    const recoveryUrl =
+      process.env.EXPO_PUBLIC_APP_RECOVERY_URL ||
+      "https://example.com/recovery";
+    await account.createRecovery(email, recoveryUrl);
   },
   register: async (email: string, password: string, name: string) => {
     await account.create(ID.unique(), email, password, name);

@@ -228,6 +228,27 @@
           ]
         },
         {
+          "$id": "monthly_reports",
+          "name": "Monthly Reports",
+          "enabled": true,
+          "documentSecurity": true,
+          "permissions": [],
+          "indexes": [
+            {
+              "key": "business_month_unique_idx",
+              "type": "unique",
+              "attributes": ["businessId", "month"],
+              "orders": ["ASC", "ASC"]
+            },
+            {
+              "key": "month_idx",
+              "type": "key",
+              "attributes": ["month"],
+              "orders": ["ASC"]
+            }
+          ]
+        },
+        {
           "$id": "notifications",
           "name": "Notifications",
           "enabled": true,

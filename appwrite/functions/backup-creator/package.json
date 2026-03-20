@@ -1,0 +1,10 @@
+{
+  "name": "backup-creator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "node-appwrite": "^13.0.1"
+  }
+}

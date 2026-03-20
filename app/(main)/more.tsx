@@ -3,13 +3,32 @@ import { useIsDark, useTheme } from "@/hooks/use-theme";
 import { Avatar } from "@/src/components/ui/Avatar";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { TabSwipeContainer } from "@/src/components/ui/TabSwipeContainer";
+import { listBackups, triggerBackup } from "@/src/services/backupService";
+import {
+    runAnalyticsCalculator,
+    runCleanupOldData,
+} from "@/src/services/functionsService";
+import {
+    listNotificationsForUser,
+    markNotificationRead,
+} from "@/src/services/notificationService";
+import { subscribeToNotifications } from "@/src/services/realtimeService";
+import {
+    listMonthlyReports,
+    triggerMonthlyReportGeneration,
+} from "@/src/services/reportsService";
+import { getStaffRoles } from "@/src/services/staffService";
+import {
+    getSubscriptionByBusinessId,
+    validateAndSyncSubscription,
+} from "@/src/services/subscriptionService";
 import { useAuthStore } from "@/src/store/authStore";
 import { useBusinessStore } from "@/src/store/businessStore";
 import { useUIStore } from "@/src/store/uiStore";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Platform,
@@ -65,13 +84,272 @@ export default function MoreScreen() {
   const { user, logout } = useAuthStore() as any;
   const { currentBusiness } = useBusinessStore();
   const { themeMode, setThemeMode } = useUIStore();
+  const [isWorking, setIsWorking] = useState(false);
+  const [stats, setStats] = useState({
+    staffCount: 0,
+    backupCount: 0,
+    unreadNotifications: 0,
+    latestReportMonth: "No reports",
+    subscriptionSummary: "Not available",
+  });
 
   const toggleTheme = () => {
     setThemeMode(themeMode === "dark" ? "light" : "dark");
   };
 
-  const showComingSoon = (feature: string) => {
-    Alert.alert(feature, "This feature is coming soon.");
+  const loadStats = useCallback(async () => {
+    if (!currentBusiness?.$id || !user?.$id) return;
+
+    try {
+      const [
+        staffResp,
+        backupsResp,
+        notificationsResp,
+        reportsResp,
+        subscription,
+      ] = await Promise.all([
+        getStaffRoles(currentBusiness.$id),
+        listBackups(currentBusiness.$id),
+        listNotificationsForUser(user.$id, currentBusiness.$id),
+        listMonthlyReports(currentBusiness.$id, 1),
+        getSubscriptionByBusinessId(currentBusiness.$id),
+      ]);
+
+      const unreadNotifications = notificationsResp.documents.filter(
+        (doc: any) => !doc.isRead,
+      ).length;
+
+      const latestReportMonth = reportsResp.documents[0]?.month ?? "No reports";
+
+      const subscriptionSummary = subscription
+        ? `${String(subscription.planType || "free").toUpperCase()} • ${String(subscription.status || "unknown")}`
+        : "No active subscription";
+
+      setStats({
+        staffCount: staffResp.total,
+        backupCount: backupsResp.total,
+        unreadNotifications,
+        latestReportMonth,
+        subscriptionSummary,
+      });
+    } catch (error: any) {
+      console.error("Failed to load More screen stats", error);
+    }
+  }, [currentBusiness?.$id, user?.$id]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  useEffect(() => {
+    if (!user?.$id) return;
+
+    const unsubscribe = subscribeToNotifications(user.$id, () => {
+      loadStats();
+    });
+
+    return () => unsubscribe();
+  }, [user?.$id, loadStats]);
+
+  const handleStaffRoles = async () => {
+    if (!currentBusiness?.$id) return;
+
+    try {
+      setIsWorking(true);
+      const response = await getStaffRoles(currentBusiness.$id);
+      Alert.alert(
+        "Staff & Roles",
+        response.total > 0
+          ? `${response.total} active staff member(s) found.`
+          : "No active staff found for this business.",
+      );
+    } catch (error: any) {
+      Alert.alert("Staff & Roles", error?.message ?? "Unable to fetch staff.");
+    } finally {
+      setIsWorking(false);
+      loadStats();
+    }
+  };
+
+  const handleUpgradePlan = async () => {
+    if (!currentBusiness?.$id) return;
+
+    const syncTrialSubscription = async () => {
+      if (!user?.$id || !currentBusiness?.$id) return;
+
+      try {
+        setIsWorking(true);
+        await validateAndSyncSubscription({
+          userId: user.$id,
+          businessId: currentBusiness.$id,
+          platform: "web",
+          productId: "invoiceflow_trial",
+          receipt: `trial_${Date.now()}`,
+        });
+        Alert.alert("Subscription", "Trial subscription synced successfully.");
+      } catch (error: any) {
+        Alert.alert(
+          "Subscription",
+          error?.message ?? "Failed to sync trial subscription.",
+        );
+      } finally {
+        setIsWorking(false);
+        loadStats();
+      }
+    };
+
+    try {
+      setIsWorking(true);
+      const subscription = await getSubscriptionByBusinessId(
+        currentBusiness.$id,
+      );
+
+      if (!subscription) {
+        Alert.alert("Subscription", "No active subscription found.", [
+          {
+            text: "Sync Trial",
+            onPress: () => {
+              void syncTrialSubscription();
+            },
+          },
+          { text: "Cancel", style: "cancel" },
+        ]);
+        return;
+      }
+
+      Alert.alert(
+        "Subscription",
+        `Plan: ${String(subscription.planType || "free").toUpperCase()}\nStatus: ${subscription.status}\nEnds: ${subscription.endDate || "N/A"}`,
+      );
+    } catch (error: any) {
+      Alert.alert(
+        "Subscription",
+        error?.message ?? "Unable to fetch subscription.",
+      );
+    } finally {
+      setIsWorking(false);
+      loadStats();
+    }
+  };
+
+  const handleSalesReport = async () => {
+    if (!currentBusiness?.$id) return;
+
+    try {
+      setIsWorking(true);
+      const { data } = await runAnalyticsCalculator(currentBusiness.$id);
+      const analytics = (data as any)?.analytics;
+
+      if (!analytics) {
+        Alert.alert(
+          "Sales Report",
+          "Analytics requested. Please try again in a few seconds.",
+        );
+        return;
+      }
+
+      Alert.alert(
+        "Sales Report",
+        `Invoices: ${analytics.invoiceCount || 0}\nRevenue: ${Number(analytics.totalRevenue || 0).toFixed(2)}\nTop Customers: ${(analytics.topCustomers || []).length}\nTop Products: ${(analytics.topProducts || []).length}`,
+      );
+    } catch (error: any) {
+      Alert.alert("Sales Report", error?.message ?? "Failed to run analytics.");
+    } finally {
+      setIsWorking(false);
+      loadStats();
+    }
+  };
+
+  const handleGenerateMonthlyReport = async () => {
+    try {
+      setIsWorking(true);
+      const { data } = await triggerMonthlyReportGeneration();
+      Alert.alert(
+        "Monthly Reports",
+        `Generation completed. Reports created: ${Number((data as any)?.reportsCreated || 0)}`,
+      );
+    } catch (error: any) {
+      Alert.alert(
+        "Monthly Reports",
+        error?.message ?? "Failed to generate monthly reports.",
+      );
+    } finally {
+      setIsWorking(false);
+      loadStats();
+    }
+  };
+
+  const handleBackup = async () => {
+    if (!currentBusiness?.$id || !user?.$id) return;
+
+    try {
+      setIsWorking(true);
+      const result = await triggerBackup(currentBusiness.$id, user.$id);
+      const backupId = (result.data as any)?.backupId || "N/A";
+      const fileName = (result.data as any)?.fileName || "N/A";
+      Alert.alert(
+        "Backup Created",
+        `Backup ID: ${backupId}\nFile: ${fileName}`,
+      );
+    } catch (error: any) {
+      Alert.alert("Backup", error?.message ?? "Failed to create backup.");
+    } finally {
+      setIsWorking(false);
+      loadStats();
+    }
+  };
+
+  const handleCleanup = async () => {
+    try {
+      setIsWorking(true);
+      const { data } = await runCleanupOldData();
+      const deleted = (data as any)?.deleted;
+      Alert.alert(
+        "Cleanup Completed",
+        deleted
+          ? `Backups: ${deleted.backups || 0}\nBackup files: ${deleted.backupFiles || 0}\nNotifications: ${deleted.notifications || 0}`
+          : "Cleanup function executed successfully.",
+      );
+    } catch (error: any) {
+      Alert.alert("Cleanup", error?.message ?? "Cleanup failed.");
+    } finally {
+      setIsWorking(false);
+      loadStats();
+    }
+  };
+
+  const handleNotifications = async () => {
+    if (!user?.$id) return;
+
+    try {
+      setIsWorking(true);
+      const response = await listNotificationsForUser(
+        user.$id,
+        currentBusiness?.$id,
+      );
+
+      const unread = response.documents.filter((doc: any) => !doc.isRead);
+      if (unread.length > 0) {
+        await Promise.all(
+          unread.slice(0, 20).map((doc: any) => markNotificationRead(doc.$id)),
+        );
+      }
+
+      Alert.alert(
+        "Notifications",
+        unread.length > 0
+          ? `${unread.length} notification(s) marked as read.`
+          : "No unread notifications.",
+      );
+    } catch (error: any) {
+      Alert.alert(
+        "Notifications",
+        error?.message ?? "Failed to fetch notifications.",
+      );
+    } finally {
+      setIsWorking(false);
+      loadStats();
+    }
   };
 
   return (
@@ -118,15 +396,15 @@ export default function MoreScreen() {
               <MenuItem
                 icon="people-outline"
                 label="Staff & Roles"
-                subtitle="Manage team members"
-                onPress={() => showComingSoon("Staff & Roles")}
+                subtitle={`${stats.staffCount} active members`}
+                onPress={handleStaffRoles}
               />
               <View style={styles.divider} />
               <MenuItem
                 icon="star-outline"
                 label="Upgrade Plan"
-                subtitle="Get Pro or Enterprise"
-                onPress={() => showComingSoon("Upgrade Plan")}
+                subtitle={stats.subscriptionSummary}
+                onPress={handleUpgradePlan}
               />
             </GlassCard>
 
@@ -136,21 +414,29 @@ export default function MoreScreen() {
               <MenuItem
                 icon="bar-chart-outline"
                 label="Sales Report"
-                onPress={() => router.push("/(main)/invoices" as any)}
+                subtitle={`Latest month: ${stats.latestReportMonth}`}
+                onPress={handleSalesReport}
               />
               <View style={styles.divider} />
               <MenuItem
                 icon="download-outline"
-                label="Export Data"
-                subtitle="Export invoices as CSV / PDF"
-                onPress={() => showComingSoon("Export Data")}
+                label="Generate Monthly Report"
+                subtitle="Run report generation function"
+                onPress={handleGenerateMonthlyReport}
               />
               <View style={styles.divider} />
               <MenuItem
                 icon="cloud-upload-outline"
                 label="Backup"
-                subtitle="Backup to cloud"
-                onPress={() => showComingSoon("Backup")}
+                subtitle={`${stats.backupCount} backup(s) available`}
+                onPress={handleBackup}
+              />
+              <View style={styles.divider} />
+              <MenuItem
+                icon="trash-outline"
+                label="Cleanup Old Data"
+                subtitle="Run weekly cleanup now"
+                onPress={handleCleanup}
               />
             </GlassCard>
 
@@ -168,13 +454,22 @@ export default function MoreScreen() {
               <MenuItem
                 icon="notifications-outline"
                 label="Notifications"
-                onPress={() => showComingSoon("Notifications")}
+                subtitle={`${stats.unreadNotifications} unread`}
+                onPress={handleNotifications}
               />
               <View style={styles.divider} />
               <MenuItem
                 icon="help-circle-outline"
                 label="Help & Support"
-                onPress={() => showComingSoon("Help & Support")}
+                subtitle={
+                  isWorking ? "Please wait..." : "Contact support anytime"
+                }
+                onPress={() =>
+                  Alert.alert(
+                    "Help & Support",
+                    "Reach out to support@invoiceflow.app for account and billing help.",
+                  )
+                }
               />
             </GlassCard>
 

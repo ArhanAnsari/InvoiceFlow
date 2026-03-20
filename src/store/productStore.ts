@@ -1,11 +1,11 @@
 import { ID, Query } from "appwrite";
 import { create } from "zustand";
-import { databases } from "../services/appwrite";
+import { COLLECTIONS, DB_ID, databases } from "../services/appwrite";
 import db, { addToSyncQueue } from "../services/database";
 import { syncEngine } from "../services/sync";
 
-const DATABASE_ID = "invoiceflow_db";
-const PRODUCTS_COLLECTION_ID = "products";
+const DATABASE_ID = DB_ID;
+const PRODUCTS_COLLECTION_ID = COLLECTIONS.PRODUCTS;
 
 export interface Product {
   $id: string;
@@ -177,7 +177,12 @@ export const useProductStore = create<ProductState>((set, get) => ({
         isActive: (productData as any).isActive ?? true,
       };
 
-      await addToSyncQueue("products", newProduct.$id, "create", syncPayload);
+      await addToSyncQueue(
+        PRODUCTS_COLLECTION_ID,
+        newProduct.$id,
+        "create",
+        syncPayload,
+      );
       syncEngine.pushChanges(); // Trigger sync
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -185,10 +190,80 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   updateProduct: async (id, updates) => {
-    // Implementation for update
+    set({ isLoading: true, error: null });
+    try {
+      const existing = get().products.find((product) => product.$id === id);
+      if (!existing) {
+        throw new Error("Product not found.");
+      }
+
+      const updatedAt = new Date().toISOString();
+      const updatedProduct = normalizeProduct({
+        ...existing,
+        ...updates,
+        $id: id,
+        updatedAt,
+        syncStatus: "pending",
+      });
+
+      const nextStock = Number((updates as any).stock ?? 0);
+      const nextUnit = String((updates as any).unit ?? "pcs");
+      const nextSku = (updates as any).sku ?? null;
+
+      await db.runAsync(
+        'UPDATE products SET name = ?, price = ?, stock = ?, taxRate = ?, unit = ?, sku = ?, "$updatedAt" = ?, isSynced = 0 WHERE "$id" = ?',
+        [
+          updatedProduct.name,
+          updatedProduct.price,
+          nextStock,
+          updatedProduct.taxRate,
+          nextUnit,
+          nextSku,
+          updatedAt,
+          id,
+        ],
+      );
+
+      set((state) => ({
+        products: state.products.map((product) =>
+          product.$id === id ? updatedProduct : product,
+        ),
+        isLoading: false,
+      }));
+
+      const syncPayload = {
+        name: updatedProduct.name,
+        description: updatedProduct.description ?? undefined,
+        price: updatedProduct.price,
+        taxRate: updatedProduct.taxRate,
+        stock: nextStock,
+        unit: nextUnit,
+        sku: nextSku ?? undefined,
+        hsnCode: updatedProduct.hsnCode ?? undefined,
+        updatedAt,
+      };
+
+      await addToSyncQueue(PRODUCTS_COLLECTION_ID, id, "update", syncPayload);
+      syncEngine.pushChanges();
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
   },
 
   deleteProduct: async (id) => {
-    // Implementation for delete
+    set({ isLoading: true, error: null });
+    try {
+      await db.runAsync('DELETE FROM products WHERE "$id" = ?', [id]);
+
+      set((state) => ({
+        products: state.products.filter((product) => product.$id !== id),
+        isLoading: false,
+      }));
+
+      await addToSyncQueue(PRODUCTS_COLLECTION_ID, id, "delete", {});
+      syncEngine.pushChanges();
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
   },
 }));

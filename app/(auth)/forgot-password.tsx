@@ -1,18 +1,15 @@
-import {
-    Colors,
-    Gradients,
-    Spacing,
-    Typography
-} from "@/constants/theme";
+import { Colors, Gradients, Spacing, Typography } from "@/constants/theme";
 import { useIsDark, useTheme } from "@/hooks/use-theme";
 import { ThemedInput } from "@/src/components/ThemedInput";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { PrimaryButton } from "@/src/components/ui/PrimaryButton";
+import { useAuthStore } from "@/src/store/authStore";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
+    Alert,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
@@ -25,6 +22,7 @@ export default function ForgotPasswordScreen() {
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(T), [T]);
   const router = useRouter();
+  const { sendPasswordRecovery } = useAuthStore() as any;
 
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -34,9 +32,13 @@ export default function ForgotPasswordScreen() {
     if (!email.trim()) return;
     setIsLoading(true);
     try {
-      // TODO: integrate Appwrite account.createRecovery(email, redirectUrl)
-      await new Promise((r) => setTimeout(r, 1000));
+      await sendPasswordRecovery(email.trim());
       setSent(true);
+    } catch (e: any) {
+      Alert.alert(
+        "Recovery Failed",
+        e?.message ?? "Could not send recovery email.",
+      );
     } finally {
       setIsLoading(false);
     }

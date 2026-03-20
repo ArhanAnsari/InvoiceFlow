@@ -3,12 +3,13 @@ import { useIsDark, useTheme } from "@/hooks/use-theme";
 import { Avatar } from "@/src/components/ui/Avatar";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { StatusBadge } from "@/src/components/ui/StatusBadge";
+import { listInvoiceItemsByInvoice } from "@/src/services/invoiceItemsService";
 import { useInvoiceStore } from "@/src/store/invoiceStore";
 import { StatusVariant } from "@/src/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
     Platform,
     Pressable,
@@ -33,8 +34,35 @@ export default function InvoiceDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { invoices } = useInvoiceStore() as any;
+  const [lineItems, setLineItems] = useState<any[]>([]);
 
   const invoice = (invoices ?? []).find((inv: any) => inv.$id === id);
+
+  useEffect(() => {
+    if (!id) return;
+
+    let isMounted = true;
+
+    const loadInvoiceItems = async () => {
+      try {
+        const response = await listInvoiceItemsByInvoice(id);
+        if (!isMounted) return;
+
+        if (response.documents.length > 0) {
+          setLineItems(response.documents as any[]);
+        }
+      } catch (error) {
+        // Non-blocking fallback to embedded invoice items.
+        if (isMounted) setLineItems([]);
+      }
+    };
+
+    loadInvoiceItems();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
 
   if (!invoice) {
     return (
@@ -53,7 +81,7 @@ export default function InvoiceDetailScreen() {
     );
   }
 
-  const items: any[] = invoice.items ?? [];
+  const items: any[] = lineItems.length > 0 ? lineItems : (invoice.items ?? []);
   const subTotal: number = invoice.subTotal ?? 0;
   const totalTax: number = invoice.totalTax ?? 0;
   const discountAmount: number = invoice.discountAmount ?? 0;

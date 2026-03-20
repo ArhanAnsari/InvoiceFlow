@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import {
-    COLLECTIONS,
-    databases,
-    DB_ID,
-    ID,
-    Permission,
-    Query,
-    Role,
+  COLLECTIONS,
+  databases,
+  DB_ID,
+  ID,
+  Permission,
+  Query,
+  Role,
 } from "../services/appwrite";
 import db from "../services/database";
 import { Business, PlanType } from "../types";
@@ -17,12 +17,17 @@ interface BusinessState {
   isLoading: boolean;
   fetchBusinesses: (userId: string) => Promise<void>;
   switchBusiness: (businessId: string) => void;
-  createBusiness: (
-    userId: string,
-    name: string,
-    gstin?: string,
-    address?: string,
-  ) => Promise<void>;
+  createBusiness: (input: {
+    userId: string;
+    name: string;
+    gstin?: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    currency?: string;
+    taxType?: "gst" | "vat" | "none";
+    invoicePrefix?: string;
+  }) => Promise<void>;
 }
 
 export const useBusinessStore = create<BusinessState>((set, get) => ({
@@ -87,25 +92,32 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
     set({ currentBusiness: selected });
   },
 
-  createBusiness: async (
-    userId: string,
-    name: string,
-    gstin?: string,
-    address?: string,
-  ) => {
+  createBusiness: async (input) => {
     set({ isLoading: true });
     try {
+      const currency = input.currency || "INR";
+      const currencySymbol =
+        currency === "USD"
+          ? "$"
+          : currency === "EUR"
+            ? "EUR"
+            : currency === "GBP"
+              ? "GBP"
+              : "Rs";
+
       const newBusiness = {
-        ownerId: userId,
-        name,
-        gstin: gstin || undefined,
-        address: address || undefined,
+        ownerId: input.userId,
+        name: input.name,
+        gstin: input.gstin || undefined,
+        address: input.address || undefined,
+        phone: input.phone || undefined,
+        email: input.email || undefined,
         planType: PlanType.FREE,
-        currency: "INR",
-        currencySymbol: "₹",
-        invoicePrefix: "INV",
+        currency,
+        currencySymbol,
+        invoicePrefix: input.invoicePrefix || "INV",
         invoiceCounter: 0,
-        taxType: "gst",
+        taxType: input.taxType || "gst",
         isActive: true,
         logoFileId: undefined,
         signatureFileId: undefined,
@@ -117,9 +129,9 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
         ID.unique(),
         newBusiness,
         [
-          Permission.read(Role.user(userId)),
-          Permission.update(Role.user(userId)),
-          Permission.delete(Role.user(userId)),
+          Permission.read(Role.user(input.userId)),
+          Permission.update(Role.user(input.userId)),
+          Permission.delete(Role.user(input.userId)),
         ],
       );
 

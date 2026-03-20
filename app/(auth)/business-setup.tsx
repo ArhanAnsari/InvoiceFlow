@@ -11,14 +11,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 const STEPS = ["Business Info", "Tax & Currency", "Preferences"] as const;
@@ -65,7 +65,17 @@ export default function BusinessSetupScreen() {
   const handleFinish = async () => {
     setIsLoading(true);
     try {
-      await createBusiness(user.$id, name.trim(), gstin.trim(), address.trim());
+      await createBusiness({
+        userId: user.$id,
+        name: name.trim(),
+        gstin: gstin.trim() || undefined,
+        address: address.trim() || undefined,
+        phone: phone.trim() || undefined,
+        email: email.trim() || undefined,
+        currency,
+        taxType: taxType as "gst" | "vat" | "none",
+        invoicePrefix: invoicePrefix.trim() || "INV",
+      });
       router.replace("/(main)");
     } catch (e: any) {
       Alert.alert("Error", e?.message ?? "Failed to create business");

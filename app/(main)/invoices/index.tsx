@@ -6,6 +6,7 @@ import { GlassCard } from "@/src/components/ui/GlassCard";
 import { SearchBar } from "@/src/components/ui/SearchBar";
 import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { TabSwipeContainer } from "@/src/components/ui/TabSwipeContainer";
+import { useRealtimeInvoices } from "@/src/hooks/useRealtimeInvoices";
 import { useBusinessStore } from "@/src/store/businessStore";
 import { useInvoiceStore } from "@/src/store/invoiceStore";
 import { StatusVariant } from "@/src/types";
@@ -44,6 +45,12 @@ export default function InvoicesScreen() {
   useEffect(() => {
     load();
   }, [currentBusiness]);
+
+  const handleRealtimeInvoiceUpdate = useCallback(() => {
+    load();
+  }, [load]);
+
+  useRealtimeInvoices(currentBusiness?.$id, handleRealtimeInvoiceUpdate);
 
   const filtered = (invoices ?? []).filter((inv: any) => {
     const matchFilter =

@@ -13,7 +13,7 @@ import "react-native-reanimated";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { initDatabase } from "@/src/services/database";
-import "@/src/services/sync";
+import { syncEngine } from "@/src/services/sync";
 import { useAuthStore } from "@/src/store/authStore";
 import { useBusinessStore } from "@/src/store/businessStore";
 import { useUIStore } from "@/src/store/uiStore";
@@ -95,6 +95,13 @@ export default Sentry.wrap(function RootLayout() {
     if (!user?.$id) return;
     fetchBusinesses(user.$id);
   }, [user?.$id]);
+
+  useEffect(() => {
+    if (!currentBusiness?.$id) return;
+
+    const unsubscribe = syncEngine.subscribe(currentBusiness.$id);
+    return () => unsubscribe();
+  }, [currentBusiness?.$id]);
 
   useEffect(() => {
     if (!isMounted || isLoading || isBusinessLoading) return;

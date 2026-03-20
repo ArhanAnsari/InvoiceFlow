@@ -189,6 +189,16 @@ export interface Subscription extends AppwriteDocument {
   autoRenew: boolean;
 }
 
+export interface MonthlyReport extends AppwriteDocument {
+  businessId: string;
+  month: string; // YYYY-MM
+  totalInvoices: number;
+  totalRevenue: number;
+  totalTax: number;
+  paidCount: number;
+  unpaidCount: number;
+}
+
 export interface AppNotification extends AppwriteDocument {
   userId: string;
   businessId: string;
