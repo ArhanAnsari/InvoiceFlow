@@ -17,14 +17,20 @@ export const subscribeToInvoices = (
 ) => {
   const channel = `databases.${DB_ID}.collections.${COLLECTIONS.INVOICES}.documents`;
 
-  return client.subscribe(channel, (response: any) => {
-    const payload = response.payload as RealtimePayload;
+  try {
+    return client.subscribe(channel, (response: any) => {
+      const payload = response.payload as RealtimePayload;
 
-    if (payload.businessId !== businessId) return;
-    if (!hasWriteEvent(response.events || [])) return;
+      if (payload.businessId !== businessId) return;
+      if (!hasWriteEvent(response.events || [])) return;
 
-    onUpdate(payload);
-  });
+      onUpdate(payload);
+    });
+  } catch (err) {
+    console.warn("Realtime invoice subscription failed:", err);
+    // Return a no-op so callers can always safely call `unsubscribe()`.
+    return () => {};
+  }
 };
 
 export const subscribeToNotifications = (
@@ -33,12 +39,18 @@ export const subscribeToNotifications = (
 ) => {
   const channel = `databases.${DB_ID}.collections.${COLLECTIONS.NOTIFICATIONS}.documents`;
 
-  return client.subscribe(channel, (response: any) => {
-    const payload = response.payload as RealtimePayload;
+  try {
+    return client.subscribe(channel, (response: any) => {
+      const payload = response.payload as RealtimePayload;
 
-    if (payload.userId !== userId) return;
-    if (!hasWriteEvent(response.events || [])) return;
+      if (payload.userId !== userId) return;
+      if (!hasWriteEvent(response.events || [])) return;
 
-    onUpdate(payload);
-  });
+      onUpdate(payload);
+    });
+  } catch (err) {
+    console.warn("Realtime notification subscription failed:", err);
+    // Return a no-op so callers can always safely call `unsubscribe()`.
+    return () => {};
+  }
 };

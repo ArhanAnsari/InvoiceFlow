@@ -318,6 +318,7 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
       syncEngine.pushChanges();
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+      throw error;
     }
   },
 }));

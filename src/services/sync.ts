@@ -125,17 +125,23 @@ export const syncService = {
       `databases.${DB_ID}.collections.${COLLECTIONS.INVOICES}.documents`,
     ];
 
-    return client.subscribe(channels, async (response: any) => {
-      const payload = response?.payload;
-      if (!payload?.businessId) return;
-      if (payload.businessId !== businessId) return;
+    try {
+      return client.subscribe(channels, async (response: any) => {
+        const payload = response?.payload;
+        if (!payload?.businessId) return;
+        if (payload.businessId !== businessId) return;
 
-      try {
-        await syncService.pullChanges(businessId);
-      } catch (syncError) {
-        console.error("Realtime sync pull failed", syncError);
-      }
-    });
+        try {
+          await syncService.pullChanges(businessId);
+        } catch (syncError) {
+          console.error("Realtime sync pull failed", syncError);
+        }
+      });
+    } catch (err) {
+      console.warn("Realtime sync subscription failed:", err);
+      // Return a no-op so callers can always safely call `unsubscribe()`.
+      return () => {};
+    }
   },
 };
 
