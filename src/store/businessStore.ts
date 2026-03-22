@@ -19,6 +19,8 @@ interface BusinessState {
   initialized: boolean;
   fetchBusinesses: (userId: string) => Promise<void>;
   switchBusiness: (businessId: string) => void;
+  /** Reset store to initial state (call on logout to prevent stale data). */
+  reset: () => void;
   createBusiness: (input: {
     userId: string;
     name: string;
@@ -39,7 +41,8 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
   initialized: false,
 
   fetchBusinesses: async (userId: string) => {
-    set({ isLoading: true, businesses: [], currentBusiness: null });
+    // Reset initialized so the navigation guard waits for this fetch to finish.
+    set({ isLoading: true, businesses: [], currentBusiness: null, initialized: false });
     try {
       // Fetch from Appwrite
       const response = await databases.listDocuments(
@@ -93,6 +96,10 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
     const { businesses } = get();
     const selected = businesses.find((b) => b.$id === businessId) || null;
     set({ currentBusiness: selected });
+  },
+
+  reset: () => {
+    set({ businesses: [], currentBusiness: null, isLoading: false, initialized: false });
   },
 
   createBusiness: async (input) => {

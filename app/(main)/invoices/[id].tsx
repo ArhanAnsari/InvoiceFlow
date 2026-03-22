@@ -26,6 +26,7 @@ function statusVariant(s: string): StatusVariant {
   if (s === "paid") return "paid";
   if (s === "partial") return "partial";
   if (s === "cancelled") return "cancelled";
+  if (s === "overdue") return "overdue";
   return "unpaid";
 }
 

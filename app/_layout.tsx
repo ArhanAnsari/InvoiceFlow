@@ -17,6 +17,7 @@ import { syncEngine } from "@/src/services/sync";
 import { useAuthStore } from "@/src/store/authStore";
 import { useBusinessStore } from "@/src/store/businessStore";
 import { useUIStore } from "@/src/store/uiStore";
+import { patchWebSocketSend } from "@/src/utils/patchWebSocket";
 import * as Sentry from "@sentry/react-native";
 
 Sentry.init({
@@ -40,6 +41,10 @@ Sentry.init({
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
 });
+
+// Guard WebSocket.send against INVALID_STATE_ERR during the CONNECTING state.
+// See src/utils/patchWebSocket.ts for full explanation.
+patchWebSocketSend();
 
 SplashScreen.preventAutoHideAsync();
 
@@ -76,6 +81,7 @@ export default Sentry.wrap(function RootLayout() {
     fetchBusinesses,
     isLoading: isBusinessLoading,
     initialized: businessInitialized,
+    reset: resetBusinessStore,
   } = useBusinessStore();
   const segments = useSegments();
   const router = useRouter();
@@ -95,6 +101,14 @@ export default Sentry.wrap(function RootLayout() {
   useEffect(() => {
     if (!user?.$id) return;
     fetchBusinesses(user.$id);
+  }, [user?.$id]);
+
+  // Clear business state on logout so a subsequent login never sees stale
+  // business data from the previous user.
+  useEffect(() => {
+    if (user === null) {
+      resetBusinessStore();
+    }
   }, [user?.$id]);
 
   useEffect(() => {
