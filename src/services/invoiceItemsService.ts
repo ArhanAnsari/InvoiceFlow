@@ -1,5 +1,4 @@
-import { Query } from "appwrite";
-import { COLLECTIONS, DB_ID, databases } from "./appwrite";
+import { COLLECTIONS, DB_ID, Query, databases } from "./appwrite";
 
 export const listInvoiceItemsByInvoice = (invoiceId: string) =>
   databases.listDocuments(DB_ID, COLLECTIONS.INVOICE_ITEMS, [

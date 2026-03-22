@@ -1,6 +1,6 @@
 // src/store/authStore.ts
-import { Models } from "appwrite";
 import { router } from "expo-router";
+import type { Models } from "react-native-appwrite";
 import { create } from "zustand";
 import { account, ID } from "../services/appwrite";
 
@@ -9,7 +9,7 @@ interface AuthState {
   isLoading: boolean;
   checkSession: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  sendOTP: (phone: string) => Promise<string>;
+  sendOTP: (email: string) => Promise<string>;
   verifyOTP: (userId: string, otp: string) => Promise<void>;
   sendPasswordRecovery: (email: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
@@ -53,8 +53,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user });
     router.replace("/(main)");
   },
-  sendOTP: async (phone: string) => {
-    const token = await account.createPhoneToken(ID.unique(), phone);
+  sendOTP: async (email: string) => {
+    const token = await account.createEmailToken(ID.unique(), email);
     return token.userId;
   },
   verifyOTP: async (userId: string, otp: string) => {

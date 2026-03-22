@@ -1,4 +1,4 @@
-import { Client, Databases, ID, Query } from "node-appwrite";
+import { Client, Databases, ID, Permission, Query, Role } from "node-appwrite";
 
 const ENV = {
   endpoint: process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1",
@@ -138,6 +138,10 @@ export default async ({ req, res, error }) => {
         ENV.subscriptionsCollection,
         existing.documents[0].$id,
         payload,
+        [
+          Permission.read(Role.user(userId)),
+          Permission.write(Role.user(userId)),
+        ],
       );
     } else {
       document = await db.createDocument(
@@ -148,6 +152,10 @@ export default async ({ req, res, error }) => {
           ...payload,
           createdAt: now.toISOString(),
         },
+        [
+          Permission.read(Role.user(userId)),
+          Permission.write(Role.user(userId)),
+        ],
       );
     }
 

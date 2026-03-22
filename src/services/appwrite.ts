@@ -1,16 +1,15 @@
 // src/services/appwrite.ts — InvoiceFlow v2
 import {
-  Account,
-  Client,
-  Databases,
-  Functions,
-  ID,
-  Permission,
-  Query,
-  Realtime,
-  Role,
-  Storage,
-} from "appwrite";
+    Account,
+    Client,
+    Databases,
+    Functions,
+    ID,
+    Permission,
+    Query,
+    Role,
+    Storage,
+} from "react-native-appwrite";
 
 // ─── Config ────────────────────────────────────────────────────────
 export const APPWRITE_ENDPOINT =
@@ -19,6 +18,8 @@ export const APPWRITE_ENDPOINT =
 export const APPWRITE_PROJECT_ID =
   process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID ?? "699988ac001cd0857f48";
 export const DB_ID = process.env.EXPO_PUBLIC_APPWRITE_DB_ID ?? "invoiceflow_db";
+export const APPWRITE_PLATFORM =
+  process.env.EXPO_PUBLIC_APPWRITE_PLATFORM ?? "com.invoiceflow.app";
 
 // ─── Collection IDs ────────────────────────────────────────────────
 export const COLLECTIONS = {
@@ -47,30 +48,30 @@ export const BUCKETS = {
 export const FUNCTION_IDS = {
   MONTHLY_REPORT_GENERATOR:
     process.env.EXPO_PUBLIC_FUNC_MONTHLY_REPORT_GENERATOR ??
-    "monthly-report-generator",
+    "69bd07750000e7501c23",
   ANALYTICS_CALCULATOR:
-    process.env.EXPO_PUBLIC_FUNC_ANALYTICS_CALCULATOR ?? "analytics-calculator",
+    process.env.EXPO_PUBLIC_FUNC_ANALYTICS_CALCULATOR ?? "69bd0de80003198d6702",
   STOCK_DEDUCTION:
-    process.env.EXPO_PUBLIC_FUNC_STOCK_DEDUCTION ?? "stock-deduction",
+    process.env.EXPO_PUBLIC_FUNC_STOCK_DEDUCTION ?? "69bd0eb40034b3489ff3",
   SUBSCRIPTION_VALIDATOR:
     process.env.EXPO_PUBLIC_FUNC_SUBSCRIPTION_VALIDATOR ??
-    "subscription-validator",
+    "69bd0efb0032a680afbb",
   BACKUP_CREATOR:
-    process.env.EXPO_PUBLIC_FUNC_BACKUP_CREATOR ?? "backup-creator",
+    process.env.EXPO_PUBLIC_FUNC_BACKUP_CREATOR ?? "69bd10580032b46179b9",
   CLEANUP_OLD_DATA:
-    process.env.EXPO_PUBLIC_FUNC_CLEANUP_OLD_DATA ?? "cleanup-old-data",
+    process.env.EXPO_PUBLIC_FUNC_CLEANUP_OLD_DATA ?? "69bd13a9002cb553f5df",
 } as const;
 
 // ─── Client ────────────────────────────────────────────────────────
 const client = new Client()
   .setEndpoint(APPWRITE_ENDPOINT)
+  .setPlatform(APPWRITE_PLATFORM)
   .setProject(APPWRITE_PROJECT_ID);
 
 export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 export const functions = new Functions(client);
-export const realtime = new Realtime(client);
 
 // ─── Helpers ───────────────────────────────────────────────────────
 /** Build standard CRUD permissions for a user-owned document. */

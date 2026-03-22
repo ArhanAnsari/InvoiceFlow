@@ -1,4 +1,4 @@
-import { Models } from "appwrite";
+import type { Models } from "react-native-appwrite";
 import { BUCKETS, ID, storage } from "./appwrite";
 
 export const uploadBusinessAsset = (

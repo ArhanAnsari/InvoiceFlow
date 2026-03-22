@@ -1,5 +1,4 @@
-import { ID } from "appwrite";
-import { account } from "./appwrite";
+import { ID, account } from "./appwrite";
 
 export const loginWithEmail = (email: string, password: string) =>
   account.createEmailPasswordSession(email, password);
@@ -19,8 +18,8 @@ export const logout = () => account.deleteSession("current");
 
 export const logoutAllDevices = () => account.deleteSessions();
 
-export const sendOTP = async (phone: string) => {
-  const token = await account.createPhoneToken(ID.unique(), phone);
+export const sendOTP = async (email: string) => {
+  const token = await account.createEmailToken(ID.unique(), email);
   return token.userId;
 };
 

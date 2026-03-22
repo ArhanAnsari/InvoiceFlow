@@ -10,14 +10,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 export default function LoginScreen() {
@@ -27,10 +27,10 @@ export default function LoginScreen() {
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(T), [T]);
 
-  const [tab, setTab] = useState<"email" | "phone">("email");
+  const [tab, setTab] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
+  const [otpEmail, setOtpEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [otpUserId, setOtpUserId] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -50,9 +50,9 @@ export default function LoginScreen() {
   };
 
   const handleSendOtp = async () => {
-    const normalized = phone.trim();
+    const normalized = otpEmail.trim().toLowerCase();
     if (!normalized) {
-      Alert.alert("Missing Fields", "Please enter your phone number.");
+      Alert.alert("Missing Fields", "Please enter your email address.");
       return;
     }
 
@@ -61,7 +61,7 @@ export default function LoginScreen() {
       const userId = await sendOTP(normalized);
       setOtpUserId(userId);
       setOtpSent(true);
-      Alert.alert("OTP Sent", "Enter the OTP you received to continue.");
+      Alert.alert("OTP Sent", "Enter the email OTP you received to continue.");
     } catch (e: any) {
       Alert.alert("OTP Failed", e?.message ?? "Unable to send OTP.");
     } finally {
@@ -123,7 +123,7 @@ export default function LoginScreen() {
 
             {/* Tab switcher */}
             <View style={styles.tabRow}>
-              {(["email", "phone"] as const).map((t) => (
+              {(["email", "otp"] as const).map((t) => (
                 <Pressable
                   key={t}
                   style={[styles.tab, tab === t && styles.tabActive]}
@@ -140,7 +140,7 @@ export default function LoginScreen() {
                       tab === t && styles.tabLabelActive,
                     ]}
                   >
-                    {t === "email" ? "Email" : "Phone OTP"}
+                    {t === "email" ? "Email" : "Email OTP"}
                   </Text>
                 </Pressable>
               ))}
@@ -195,14 +195,16 @@ export default function LoginScreen() {
             ) : (
               <>
                 <ThemedInput
-                  label="Phone Number"
-                  value={phone}
-                  onChangeText={setPhone}
-                  placeholder="+91 98765 43210"
-                  keyboardType="phone-pad"
+                  label="Email"
+                  value={otpEmail}
+                  onChangeText={setOtpEmail}
+                  placeholder="you@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
                   leftIcon={
                     <Ionicons
-                      name="call-outline"
+                      name="mail-outline"
                       size={18}
                       color={T.textMuted}
                     />

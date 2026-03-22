@@ -1,7 +1,7 @@
 import {
-    DarkTheme,
-    DefaultTheme,
-    ThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
 } from "@react-navigation/native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -106,8 +106,10 @@ export default Sentry.wrap(function RootLayout() {
   useEffect(() => {
     if (!isMounted || isLoading || isBusinessLoading) return;
 
+    const routeSegments = segments as string[];
     const inAuthGroup = segments[0] === "(auth)";
-    const onBusinessSetup = inAuthGroup && segments[1] === "business-setup";
+    const onBusinessSetup =
+      inAuthGroup && routeSegments[1] === "business-setup";
 
     if (!user && !inAuthGroup) {
       router.replace("/(auth)/login");

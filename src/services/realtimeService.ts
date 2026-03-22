@@ -1,4 +1,4 @@
-import { Models } from "appwrite";
+import type { Models } from "react-native-appwrite";
 import { COLLECTIONS, DB_ID, client } from "./appwrite";
 
 type RealtimePayload = Models.Document & {

@@ -4,7 +4,9 @@ import {
     Databases,
     ID,
     InputFile,
+    Permission,
     Query,
+    Role,
     Storage,
 } from "node-appwrite";
 
@@ -115,6 +117,7 @@ export default async ({ req, res, error }) => {
         recordCounts: JSON.stringify(snapshot.counts),
         createdAt: new Date().toISOString(),
       },
+      [Permission.read(Role.user(userId)), Permission.write(Role.user(userId))],
     );
 
     return res.json(

@@ -5,22 +5,22 @@ import { GlassCard } from "@/src/components/ui/GlassCard";
 import { TabSwipeContainer } from "@/src/components/ui/TabSwipeContainer";
 import { listBackups, triggerBackup } from "@/src/services/backupService";
 import {
-    runAnalyticsCalculator,
-    runCleanupOldData,
+  runAnalyticsCalculator,
+  runCleanupOldData,
 } from "@/src/services/functionsService";
 import {
-    listNotificationsForUser,
-    markNotificationRead,
+  listNotificationsForUser,
+  markNotificationRead,
 } from "@/src/services/notificationService";
 import { subscribeToNotifications } from "@/src/services/realtimeService";
 import {
-    listMonthlyReports,
-    triggerMonthlyReportGeneration,
+  listMonthlyReports,
+  triggerMonthlyReportGeneration,
 } from "@/src/services/reportsService";
 import { getStaffRoles } from "@/src/services/staffService";
 import {
-    getSubscriptionByBusinessId,
-    validateAndSyncSubscription,
+  getSubscriptionByBusinessId,
+  validateAndSyncSubscription,
 } from "@/src/services/subscriptionService";
 import { useAuthStore } from "@/src/store/authStore";
 import { useBusinessStore } from "@/src/store/businessStore";
@@ -30,13 +30,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Alert,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -97,44 +97,94 @@ export default function MoreScreen() {
     setThemeMode(themeMode === "dark" ? "light" : "dark");
   };
 
+  const isAuthzError = (error: any) => {
+    const message = String(error?.message ?? "").toLowerCase();
+    return (
+      error?.code === 401 ||
+      error?.code === 403 ||
+      message.includes("not authorized") ||
+      message.includes("unauthorized")
+    );
+  };
+
   const loadStats = useCallback(async () => {
     if (!currentBusiness?.$id || !user?.$id) return;
 
-    try {
-      const [
-        staffResp,
-        backupsResp,
-        notificationsResp,
-        reportsResp,
-        subscription,
-      ] = await Promise.all([
-        getStaffRoles(currentBusiness.$id),
-        listBackups(currentBusiness.$id),
-        listNotificationsForUser(user.$id, currentBusiness.$id),
-        listMonthlyReports(currentBusiness.$id, 1),
-        getSubscriptionByBusinessId(currentBusiness.$id),
-      ]);
+    const results = await Promise.allSettled([
+      getStaffRoles(currentBusiness.$id),
+      listBackups(currentBusiness.$id),
+      listNotificationsForUser(user.$id, currentBusiness.$id),
+      listMonthlyReports(currentBusiness.$id, 1),
+      getSubscriptionByBusinessId(currentBusiness.$id),
+    ]);
 
-      const unreadNotifications = notificationsResp.documents.filter(
-        (doc: any) => !doc.isRead,
-      ).length;
+    const [
+      staffResult,
+      backupsResult,
+      notificationsResult,
+      reportsResult,
+      subscriptionResult,
+    ] = results;
 
-      const latestReportMonth = reportsResp.documents[0]?.month ?? "No reports";
+    if (staffResult.status === "rejected") {
+      console.warn(
+        "More stats: staff_roles request failed",
+        staffResult.reason,
+      );
+    }
+    if (backupsResult.status === "rejected") {
+      console.warn("More stats: backups request failed", backupsResult.reason);
+    }
+    if (notificationsResult.status === "rejected") {
+      console.warn(
+        "More stats: notifications request failed",
+        notificationsResult.reason,
+      );
+    }
+    if (reportsResult.status === "rejected") {
+      console.warn(
+        "More stats: monthly_reports request failed",
+        reportsResult.reason,
+      );
+    }
+    if (subscriptionResult.status === "rejected") {
+      console.warn(
+        "More stats: subscriptions request failed",
+        subscriptionResult.reason,
+      );
+    }
 
-      const subscriptionSummary = subscription
+    const staffCount =
+      staffResult.status === "fulfilled" ? staffResult.value.total : 0;
+    const backupCount =
+      backupsResult.status === "fulfilled" ? backupsResult.value.total : 0;
+    const unreadNotifications =
+      notificationsResult.status === "fulfilled"
+        ? notificationsResult.value.documents.filter((doc: any) => !doc.isRead)
+            .length
+        : 0;
+    const latestReportMonth =
+      reportsResult.status === "fulfilled"
+        ? (reportsResult.value.documents[0]?.month ?? "No reports")
+        : "No reports";
+
+    let subscriptionSummary = "Not available";
+    if (subscriptionResult.status === "fulfilled") {
+      const subscription = subscriptionResult.value;
+      subscriptionSummary = subscription
         ? `${String(subscription.planType || "free").toUpperCase()} • ${String(subscription.status || "unknown")}`
         : "No active subscription";
-
-      setStats({
-        staffCount: staffResp.total,
-        backupCount: backupsResp.total,
-        unreadNotifications,
-        latestReportMonth,
-        subscriptionSummary,
-      });
-    } catch (error: any) {
-      console.error("Failed to load More screen stats", error);
+    } else if (isAuthzError(subscriptionResult.reason)) {
+      subscriptionSummary = "Restricted";
     }
+
+    setStats({
+      staffCount,
+      backupCount,
+      unreadNotifications,
+      latestReportMonth,
+      subscriptionSummary,
+    });
   }, [currentBusiness?.$id, user?.$id]);
 
   useEffect(() => {
@@ -144,11 +194,22 @@ export default function MoreScreen() {
   useEffect(() => {
     if (!user?.$id) return;
 
-    const unsubscribe = subscribeToNotifications(user.$id, () => {
-      loadStats();
-    });
+    let unsubscribe: (() => void) | undefined;
+    try {
+      unsubscribe = subscribeToNotifications(user.$id, () => {
+        loadStats();
+      });
+    } catch (error) {
+      console.error("Failed to subscribe to notifications", error);
+    }
 
-    return () => unsubscribe();
+    return () => {
+      try {
+        unsubscribe?.();
+      } catch (error) {
+        console.error("Failed to unsubscribe from notifications", error);
+      }
+    };
   }, [user?.$id, loadStats]);
 
   const handleStaffRoles = async () => {
@@ -182,7 +243,12 @@ export default function MoreScreen() {
         await validateAndSyncSubscription({
           userId: user.$id,
           businessId: currentBusiness.$id,
-          platform: "web",
+          platform:
+            Platform.OS === "ios"
+              ? "ios"
+              : Platform.OS === "android"
+                ? "android"
+                : "web",
           productId: "invoiceflow_trial",
           receipt: `trial_${Date.now()}`,
         });
@@ -467,7 +533,7 @@ export default function MoreScreen() {
                 onPress={() =>
                   Alert.alert(
                     "Help & Support",
-                    "Reach out to support@invoiceflow.app for account and billing help.",
+                    "Reach out to arhanansari2009@gmail.com for account and billing help.",
                   )
                 }
               />

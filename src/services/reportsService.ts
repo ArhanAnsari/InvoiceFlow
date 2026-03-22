@@ -1,5 +1,4 @@
-import { Query } from "appwrite";
-import { COLLECTIONS, DB_ID, databases } from "./appwrite";
+import { COLLECTIONS, DB_ID, Query, databases } from "./appwrite";
 import { runMonthlyReportGenerator } from "./functionsService";
 
 export const triggerMonthlyReportGeneration = () => runMonthlyReportGenerator();

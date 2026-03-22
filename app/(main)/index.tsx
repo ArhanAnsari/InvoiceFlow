@@ -12,7 +12,7 @@ import { useInvoiceStore } from "@/src/store/invoiceStore";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Platform,
     Pressable,
@@ -37,9 +37,18 @@ function statusToVariant(s: string) {
   return "unpaid";
 }
 
+function getGreetingForHour(hour: number) {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function DashboardScreen() {
   const T = useTheme();
   const isDark = useIsDark();
+  const [greeting, setGreeting] = useState(() =>
+    getGreetingForHour(new Date().getHours()),
+  );
   const styles = useMemo(() => createStyles(T), [T]);
   const router = useRouter();
   const { user } = useAuthStore() as any;
@@ -55,6 +64,16 @@ export default function DashboardScreen() {
   useEffect(() => {
     reload();
   }, [currentBusiness]);
+
+  useEffect(() => {
+    const updateGreeting = () => {
+      setGreeting(getGreetingForHour(new Date().getHours()));
+    };
+
+    updateGreeting();
+    const interval = setInterval(updateGreeting, 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // KPI calculations
   const totalRevenue = (invoices ?? [])
@@ -122,7 +141,7 @@ export default function DashboardScreen() {
             {/* Header */}
             <View style={styles.headerRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.greeting}>Good morning,</Text>
+                <Text style={styles.greeting}>{greeting},</Text>
                 <Text style={styles.name}>{firstName}</Text>
               </View>
               <Pressable
@@ -134,20 +153,27 @@ export default function DashboardScreen() {
             </View>
 
             {/* Business pill */}
-            <LinearGradient
-              colors={["rgba(99,102,241,0.25)", "rgba(139,92,246,0.15)"]}
-              style={styles.businessPill}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <Pressable
+              onPress={() => router.push("/(auth)/business-setup" as any)}
+              hitSlop={8}
             >
-              <Ionicons name="business-outline" size={16} color={T.primary} />
-              <Text style={styles.businessName}>{currentBusiness.name}</Text>
-              <Ionicons
-                name="chevron-down-outline"
-                size={14}
-                color={T.textMuted}
-              />
-            </LinearGradient>
+              <LinearGradient
+                colors={["rgba(99,102,241,0.25)", "rgba(139,92,246,0.15)"]}
+                style={styles.businessPill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Ionicons name="business-outline" size={16} color={T.primary} />
+                <Text numberOfLines={1} style={styles.businessName}>
+                  {currentBusiness.name}
+                </Text>
+                <Ionicons
+                  name="chevron-down-outline"
+                  size={14}
+                  color={T.textMuted}
+                />
+              </LinearGradient>
+            </Pressable>
 
             {/* KPI Cards */}
             <View style={styles.kpiGrid}>

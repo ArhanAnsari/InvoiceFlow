@@ -1,4 +1,5 @@
-import { ExecutionMethod, Models } from "appwrite";
+import type { Models } from "react-native-appwrite";
+import { ExecutionMethod } from "react-native-appwrite";
 import { FUNCTION_IDS, functions } from "./appwrite";
 
 type ExecuteOptions = {

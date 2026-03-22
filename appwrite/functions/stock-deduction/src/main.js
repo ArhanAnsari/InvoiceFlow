@@ -1,4 +1,4 @@
-import { Client, Databases, ID } from "node-appwrite";
+import { Client, Databases, ID, Permission, Role } from "node-appwrite";
 
 const ENV = {
   endpoint: process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1",
@@ -109,6 +109,10 @@ export default async ({ req, res, log, error }) => {
                 isRead: false,
                 createdAt: new Date().toISOString(),
               },
+              [
+                Permission.read(Role.user(userId)),
+                Permission.write(Role.user(userId)),
+              ],
             );
 
             notificationsCreated += 1;

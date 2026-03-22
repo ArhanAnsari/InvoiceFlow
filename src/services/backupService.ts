@@ -1,5 +1,4 @@
-import { Query } from "appwrite";
-import { COLLECTIONS, DB_ID, databases } from "./appwrite";
+import { COLLECTIONS, DB_ID, Query, databases } from "./appwrite";
 import { runBackupCreator } from "./functionsService";
 
 export const triggerBackup = async (businessId: string, userId: string) => {
@@ -10,6 +9,6 @@ export const triggerBackup = async (businessId: string, userId: string) => {
 export const listBackups = (businessId: string) =>
   databases.listDocuments(DB_ID, COLLECTIONS.BACKUPS, [
     Query.equal("businessId", businessId),
-    Query.orderDesc("createdAt"),
+    Query.orderDesc("$createdAt"),
     Query.limit(50),
   ]);

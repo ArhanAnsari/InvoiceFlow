@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import {
-  COLLECTIONS,
-  databases,
-  DB_ID,
-  ID,
-  Permission,
-  Query,
-  Role,
+    COLLECTIONS,
+    databases,
+    DB_ID,
+    ID,
+    Permission,
+    Query,
+    Role,
 } from "../services/appwrite";
 import db from "../services/database";
 import { Business, PlanType } from "../types";
@@ -54,7 +54,7 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
       // Also sync to local DB (simplified)
       for (const b of businesses) {
         await db.runAsync(
-          `INSERT OR REPLACE INTO businesses ($id, ownerId, name, gstin, address, logoFileId, planType, $createdAt, $updatedAt)
+          `INSERT OR REPLACE INTO businesses ("$id", ownerId, name, gstin, address, logoFileId, planType, "$createdAt", "$updatedAt")
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             b.$id,
@@ -146,7 +146,7 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
 
       // Save to local DB
       await db.runAsync(
-        `INSERT OR REPLACE INTO businesses ($id, ownerId, name, gstin, address, logoFileId, planType, $createdAt, $updatedAt)
+        `INSERT OR REPLACE INTO businesses ("$id", ownerId, name, gstin, address, logoFileId, planType, "$createdAt", "$updatedAt")
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           createdBusiness.$id,

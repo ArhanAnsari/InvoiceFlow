@@ -1,5 +1,12 @@
-import { ID, Permission, Query, Role } from "appwrite";
-import { COLLECTIONS, DB_ID, databases } from "./appwrite";
+import {
+    COLLECTIONS,
+    DB_ID,
+    ID,
+    Permission,
+    Query,
+    Role,
+    databases,
+} from "./appwrite";
 
 export const getStaffRoles = async (businessId: string) =>
   databases.listDocuments(DB_ID, COLLECTIONS.STAFF_ROLES, [

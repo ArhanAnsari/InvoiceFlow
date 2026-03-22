@@ -1,5 +1,4 @@
-import { Query } from "appwrite";
-import { COLLECTIONS, DB_ID, databases } from "./appwrite";
+import { COLLECTIONS, DB_ID, Query, databases } from "./appwrite";
 
 export const listNotificationsForUser = async (
   userId: string,
@@ -7,7 +6,7 @@ export const listNotificationsForUser = async (
 ) => {
   const queries = [
     Query.equal("userId", userId),
-    Query.orderDesc("createdAt"),
+    Query.orderDesc("$createdAt"),
     Query.limit(100),
   ];
 
