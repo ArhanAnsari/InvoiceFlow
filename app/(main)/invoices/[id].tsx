@@ -4,13 +4,15 @@ import { Avatar } from "@/src/components/ui/Avatar";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { listInvoiceItemsByInvoice } from "@/src/services/invoiceItemsService";
-import { useInvoiceStore } from "@/src/store/invoiceStore";
+import { Invoice, useInvoiceStore } from "@/src/store/invoiceStore";
 import { StatusVariant } from "@/src/types";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
+    ActivityIndicator,
+    Alert,
     Platform,
     Pressable,
     ScrollView,
@@ -27,16 +29,37 @@ function statusVariant(s: string): StatusVariant {
   return "unpaid";
 }
 
+const STATUS_OPTIONS: { label: string; value: Invoice["status"] }[] = [
+  { label: "Unpaid", value: "unpaid" },
+  { label: "Paid", value: "paid" },
+  { label: "Partial", value: "partial" },
+  { label: "Overdue", value: "overdue" },
+  { label: "Cancelled", value: "cancelled" },
+];
+
 export default function InvoiceDetailScreen() {
   const T = useTheme();
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(T), [T]);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { invoices } = useInvoiceStore() as any;
+  const { invoices, updateInvoiceStatus } = useInvoiceStore() as any;
   const [lineItems, setLineItems] = useState<any[]>([]);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const invoice = (invoices ?? []).find((inv: any) => inv.$id === id);
+
+  const handleStatusChange = async (newStatus: Invoice["status"]) => {
+    if (!id || invoice?.status === newStatus) return;
+    setIsUpdatingStatus(true);
+    try {
+      await updateInvoiceStatus(id, newStatus);
+    } catch (err: any) {
+      Alert.alert("Error", err?.message ?? "Failed to update status");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -132,6 +155,37 @@ export default function InvoiceDetailScreen() {
               <Text style={styles.date}>
                 Due: {new Date(invoice.dueDate).toLocaleDateString("en-IN")}
               </Text>
+            )}
+          </GlassCard>
+
+          {/* Status Change */}
+          <Text style={styles.sectionLabel}>Update Status</Text>
+          <GlassCard dark={isDark} style={styles.statusCard}>
+            {isUpdatingStatus ? (
+              <ActivityIndicator color={T.primary} />
+            ) : (
+              <View style={styles.statusRow}>
+                {STATUS_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.value}
+                    style={[
+                      styles.statusPill,
+                      invoice.status === opt.value && styles.statusPillActive,
+                    ]}
+                    onPress={() => handleStatusChange(opt.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.statusPillText,
+                        invoice.status === opt.value &&
+                          styles.statusPillTextActive,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             )}
           </GlassCard>
 
@@ -297,5 +351,21 @@ function createStyles(T: typeof Colors.dark) {
     totalLabel: { ...Typography.h4, color: T.text },
     totalValue: { ...Typography.h3, color: T.primary, fontWeight: "700" },
     notes: { fontSize: 14, color: T.textSecondary, lineHeight: 22 },
+    statusCard: { marginBottom: Spacing.lg },
+    statusRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    statusPill: {
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: Radius.full,
+      borderWidth: 1.5,
+      borderColor: T.border,
+    },
+    statusPillActive: { backgroundColor: T.primary, borderColor: T.primary },
+    statusPillText: { fontSize: 12, color: T.textMuted, fontWeight: "600" },
+    statusPillTextActive: { color: "#fff" },
   });
 }

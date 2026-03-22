@@ -75,6 +75,7 @@ export default Sentry.wrap(function RootLayout() {
     currentBusiness,
     fetchBusinesses,
     isLoading: isBusinessLoading,
+    initialized: businessInitialized,
   } = useBusinessStore();
   const segments = useSegments();
   const router = useRouter();
@@ -106,6 +107,13 @@ export default Sentry.wrap(function RootLayout() {
   useEffect(() => {
     if (!isMounted || isLoading || isBusinessLoading) return;
 
+    // Wait until fetchBusinesses has completed at least once before
+    // deciding whether to redirect to business-setup.  Without this guard,
+    // the navigation effect fires immediately after checkSession resolves
+    // (before fetchBusinesses even starts), sees currentBusiness === null, and
+    // incorrectly redirects the user to the setup screen on every launch.
+    if (user && !businessInitialized) return;
+
     const routeSegments = segments as string[];
     const inAuthGroup = segments[0] === "(auth)";
     const onBusinessSetup =
@@ -132,6 +140,7 @@ export default Sentry.wrap(function RootLayout() {
     segments,
     isLoading,
     isBusinessLoading,
+    businessInitialized,
     isMounted,
   ]);
 

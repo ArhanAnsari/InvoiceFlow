@@ -15,6 +15,8 @@ interface BusinessState {
   businesses: Business[];
   currentBusiness: Business | null;
   isLoading: boolean;
+  /** True once the first fetchBusinesses call has completed (success or failure). */
+  initialized: boolean;
   fetchBusinesses: (userId: string) => Promise<void>;
   switchBusiness: (businessId: string) => void;
   createBusiness: (input: {
@@ -34,6 +36,7 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
   businesses: [],
   currentBusiness: null,
   isLoading: false,
+  initialized: false,
 
   fetchBusinesses: async (userId: string) => {
     set({ isLoading: true, businesses: [], currentBusiness: null });
@@ -82,7 +85,7 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
           localBusinesses.length > 0 ? (localBusinesses[0] as Business) : null,
       });
     } finally {
-      set({ isLoading: false });
+      set({ isLoading: false, initialized: true });
     }
   },
 
