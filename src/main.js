@@ -1,14 +1,13 @@
-import { Client, Databases, Query } from "node-appwrite";
+import { Client, Databases, ID, Permission, Role } from "node-appwrite";
 
 const ENV = {
   endpoint: process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1",
   projectId: process.env.APPWRITE_PROJECT_ID || "699988ac001cd0857f48",
-  apiKey: process.env.APPWRITE_API_KEY,
+  apiKey: process.env.APPWRITE_API_KEY || "",
   dbId: process.env.APPWRITE_DB_ID || "invoiceflow_db",
-  businessesCollection: process.env.COLLECTION_BUSINESSES || "businesses",
-  invoicesCollection: process.env.COLLECTION_INVOICES || "invoices",
-  invoiceItemsCollection:
-    process.env.COLLECTION_INVOICE_ITEMS || "invoice_items",
+  productsCollection: process.env.COLLECTION_PRODUCTS || "products",
+  notificationsCollection:
+    process.env.COLLECTION_NOTIFICATIONS || "notifications",
 };
 
 const getDb = () => {
@@ -23,6 +22,7 @@ const getDb = () => {
 const parseJsonBody = (req) => {
   if (!req?.body) return {};
   if (typeof req.body === "object") return req.body;
+
   try {
     return JSON.parse(req.body);
   } catch {
@@ -30,134 +30,97 @@ const parseJsonBody = (req) => {
   }
 };
 
-const getThirtyDaysAgo = () => {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - 30);
-  d.setUTCHours(0, 0, 0, 0);
-  return d.toISOString();
-};
+const parseItems = (invoice) => {
+  if (Array.isArray(invoice.items)) return invoice.items;
 
-const listInvoices = async (db, businessId, fromIso) => {
-  try {
-    return await db.listDocuments(ENV.dbId, ENV.invoicesCollection, [
-      Query.equal("businessId", businessId),
-      Query.greaterThanEqual("date", fromIso),
-      Query.limit(5000),
-    ]);
-  } catch {
-    return await db.listDocuments(ENV.dbId, ENV.invoicesCollection, [
-      Query.equal("businessId", businessId),
-      Query.greaterThanEqual("invoiceDate", fromIso),
-      Query.limit(5000),
-    ]);
-  }
-};
-
-const computeAnalyticsForBusiness = async (db, businessId, fromIso) => {
-  const invoicesResp = await listInvoices(db, businessId, fromIso);
-  const itemsResp = await db.listDocuments(
-    ENV.dbId,
-    ENV.invoiceItemsCollection,
-    [Query.equal("businessId", businessId), Query.limit(5000)],
-  );
-
-  const revenueByDay = {};
-  const customerRevenue = {};
-
-  for (const invoice of invoicesResp.documents) {
-    const rawDate = invoice.date || invoice.invoiceDate || invoice.$createdAt;
-    const day = String(rawDate).slice(0, 10);
-    const total = Number(invoice.totalAmount || 0);
-    revenueByDay[day] = (revenueByDay[day] || 0) + total;
-
-    const customerId = String(invoice.customerId || "unknown");
-    const customerName = String(invoice.customerName || "Unknown");
-    const existing = customerRevenue[customerId] || {
-      customerId,
-      customerName,
-      amount: 0,
-    };
-    existing.amount += total;
-    customerRevenue[customerId] = existing;
+  if (typeof invoice.items === "string") {
+    try {
+      const parsed = JSON.parse(invoice.items);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }
 
-  const productMap = {};
-  for (const item of itemsResp.documents) {
-    const productId = String(item.productId || "unknown");
-    const productName = String(item.productName || "Unknown");
-    const quantity = Number(item.quantity || 0);
-    const existing = productMap[productId] || {
-      productId,
-      productName,
-      quantity: 0,
-    };
-    existing.quantity += quantity;
-    productMap[productId] = existing;
+  if (typeof invoice.detailsJson === "string") {
+    try {
+      const parsed = JSON.parse(invoice.detailsJson);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }
 
-  const topCustomers = Object.values(customerRevenue)
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 10);
-
-  const topProducts = Object.values(productMap)
-    .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 10);
-
-  const revenueTrend = Object.entries(revenueByDay)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, revenue]) => ({ date, revenue }));
-
-  const totalRevenue = invoicesResp.documents.reduce(
-    (sum, invoice) => sum + Number(invoice.totalAmount || 0),
-    0,
-  );
-
-  return {
-    businessId,
-    generatedAt: new Date().toISOString(),
-    windowStart: fromIso,
-    invoiceCount: invoicesResp.total,
-    totalRevenue,
-    topCustomers,
-    topProducts,
-    revenueTrend,
-  };
+  return [];
 };
 
 export default async ({ req, res, log, error }) => {
   try {
     const db = getDb();
-    const body = parseJsonBody(req);
-    const businessId = body.businessId || req?.query?.businessId;
-    const fromIso = getThirtyDaysAgo();
+    const invoice = parseJsonBody(req);
+    const items = parseItems(invoice);
 
-    if (businessId) {
-      const analytics = await computeAnalyticsForBusiness(
-        db,
-        businessId,
-        fromIso,
+    if (!invoice.businessId || items.length === 0) {
+      return res.json(
+        { ok: false, error: "Invalid invoice payload or missing items" },
+        400,
       );
-      return res.json({ ok: true, analytics }, 200);
     }
 
-    const businesses = await db.listDocuments(
-      ENV.dbId,
-      ENV.businessesCollection,
-      [Query.equal("isActive", true), Query.limit(500)],
-    );
+    let updatedProducts = 0;
+    let notificationsCreated = 0;
 
-    const results = [];
-    for (const business of businesses.documents) {
+    for (const item of items) {
+      const productId = String(item.productId || "");
+      const quantity = Number(item.quantity || 0);
+      if (!productId || quantity <= 0) continue;
+
       try {
-        const analytics = await computeAnalyticsForBusiness(
-          db,
-          business.$id,
-          fromIso,
+        const product = await db.getDocument(
+          ENV.dbId,
+          ENV.productsCollection,
+          productId,
         );
-        results.push(analytics);
+
+        const currentStock = Number(product.stock || 0);
+        const newStock = Math.max(0, currentStock - quantity);
+
+        await db.updateDocument(ENV.dbId, ENV.productsCollection, productId, {
+          stock: newStock,
+          updatedAt: new Date().toISOString(),
+        });
+
+        updatedProducts += 1;
+
+        const threshold = Number(product.lowStockThreshold || 0);
+        if (newStock <= threshold) {
+          const userId = String(invoice.staffId || invoice.ownerId || "");
+          if (userId) {
+            await db.createDocument(
+              ENV.dbId,
+              ENV.notificationsCollection,
+              ID.unique(),
+              {
+                userId,
+                businessId: invoice.businessId,
+                type: "low_stock",
+                title: "Low Stock Alert",
+                body: `${product.name} is running low (${newStock} ${product.unit || "pcs"} left)`,
+                isRead: false,
+                createdAt: new Date().toISOString(),
+              },
+              [
+                Permission.read(Role.user(userId)),
+                Permission.write(Role.user(userId)),
+              ],
+            );
+
+            notificationsCreated += 1;
+          }
+        }
       } catch (innerError) {
         log(
-          `Analytics failed for business ${business.$id}: ${innerError.message}`,
+          `Stock update skipped for product ${productId}: ${innerError.message}`,
         );
       }
     }
@@ -165,8 +128,9 @@ export default async ({ req, res, log, error }) => {
     return res.json(
       {
         ok: true,
-        processedBusinesses: results.length,
-        analytics: results,
+        businessId: invoice.businessId,
+        updatedProducts,
+        notificationsCreated,
       },
       200,
     );
