@@ -1,25 +1,18 @@
-import JSZip from "jszip";
-import {
-    Client,
-    Databases,
-    ID,
-    InputFile,
-    Permission,
-    Query,
-    Role,
-    Storage,
-} from "node-appwrite";
+import { Client, Databases, Query, Storage } from "node-appwrite";
 
 const ENV = {
   endpoint: process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1",
   projectId: process.env.APPWRITE_PROJECT_ID || "699988ac001cd0857f48",
   apiKey: process.env.APPWRITE_API_KEY || "",
   dbId: process.env.APPWRITE_DB_ID || "invoiceflow_db",
-  customersCollection: process.env.COLLECTION_CUSTOMERS || "customers",
-  productsCollection: process.env.COLLECTION_PRODUCTS || "products",
-  invoicesCollection: process.env.COLLECTION_INVOICES || "invoices",
+  notificationsCollection:
+    process.env.COLLECTION_NOTIFICATIONS || "notifications",
   backupsCollection: process.env.COLLECTION_BACKUPS || "backups",
   backupsBucket: process.env.BUCKET_BACKUPS || "backups",
+  backupsRetentionDays: Number(process.env.BACKUPS_RETENTION_DAYS || 90),
+  readNotificationsRetentionDays: Number(
+    process.env.NOTIFICATIONS_RETENTION_DAYS || 30,
+  ),
 };
 
 const getClients = () => {
@@ -34,98 +27,89 @@ const getClients = () => {
   };
 };
 
-const parseJsonBody = (req) => {
-  if (!req?.body) return {};
-  if (typeof req.body === "object") return req.body;
-
-  try {
-    return JSON.parse(req.body);
-  } catch {
-    return {};
-  }
+const isoDaysAgo = (days) => {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString();
 };
 
-const listByBusiness = (db, collectionId, businessId) =>
-  db.listDocuments(ENV.dbId, collectionId, [
-    Query.equal("businessId", businessId),
-    Query.limit(5000),
-  ]);
-
-export default async ({ req, res, error }) => {
+export default async ({ res, log, error }) => {
   try {
     const { db, storage } = getClients();
-    const body = parseJsonBody(req);
 
-    const businessId = String(body.businessId || "");
-    const userId = String(body.userId || "");
+    const backupsCutoff = isoDaysAgo(ENV.backupsRetentionDays);
+    const notificationsCutoff = isoDaysAgo(ENV.readNotificationsRetentionDays);
 
-    if (!businessId || !userId) {
-      return res.json(
-        { ok: false, error: "Missing required fields: businessId and userId" },
-        400,
-      );
-    }
-
-    const [customers, products, invoices] = await Promise.all([
-      listByBusiness(db, ENV.customersCollection, businessId),
-      listByBusiness(db, ENV.productsCollection, businessId),
-      listByBusiness(db, ENV.invoicesCollection, businessId),
-    ]);
-
-    const snapshot = {
-      exportedAt: new Date().toISOString(),
-      businessId,
-      userId,
-      counts: {
-        customers: customers.total,
-        products: products.total,
-        invoices: invoices.total,
-      },
-      customers: customers.documents,
-      products: products.documents,
-      invoices: invoices.documents,
-    };
-
-    const zip = new JSZip();
-    zip.file("backup.json", JSON.stringify(snapshot, null, 2));
-
-    const zipBuffer = await zip.generateAsync({
-      type: "nodebuffer",
-      compression: "DEFLATE",
-      compressionOptions: { level: 9 },
-    });
-
-    const fileName = `backup_${businessId}_${Date.now()}.zip`;
-    const upload = await storage.createFile(
-      ENV.backupsBucket,
-      ID.unique(),
-      InputFile.fromBuffer(zipBuffer, fileName, "application/zip"),
-    );
-
-    const backupDoc = await db.createDocument(
+    const backupsResp = await db.listDocuments(
       ENV.dbId,
       ENV.backupsCollection,
-      ID.unique(),
-      {
-        businessId,
-        userId,
-        fileId: upload.$id,
-        fileName,
-        fileSizeBytes: Number(upload.sizeOriginal || zipBuffer.length),
-        status: "completed",
-        type: "manual",
-        recordCounts: JSON.stringify(snapshot.counts),
-        createdAt: new Date().toISOString(),
-      },
-      [Permission.read(Role.user(userId)), Permission.write(Role.user(userId))],
+      [Query.lessThan("createdAt", backupsCutoff), Query.limit(500)],
     );
+
+    let backupsDeleted = 0;
+    let backupFilesDeleted = 0;
+
+    for (const backup of backupsResp.documents) {
+      try {
+        if (backup.fileId) {
+          try {
+            await storage.deleteFile(ENV.backupsBucket, String(backup.fileId));
+            backupFilesDeleted += 1;
+          } catch (fileError) {
+            log(
+              `Failed to delete backup file ${backup.fileId}: ${fileError.message}`,
+            );
+          }
+        }
+
+        await db.deleteDocument(ENV.dbId, ENV.backupsCollection, backup.$id);
+        backupsDeleted += 1;
+      } catch (backupError) {
+        log(
+          `Failed to delete backup doc ${backup.$id}: ${backupError.message}`,
+        );
+      }
+    }
+
+    const notificationsResp = await db.listDocuments(
+      ENV.dbId,
+      ENV.notificationsCollection,
+      [
+        Query.equal("isRead", true),
+        Query.lessThan("createdAt", notificationsCutoff),
+        Query.limit(1000),
+      ],
+    );
+
+    let notificationsDeleted = 0;
+
+    for (const notification of notificationsResp.documents) {
+      try {
+        await db.deleteDocument(
+          ENV.dbId,
+          ENV.notificationsCollection,
+          notification.$id,
+        );
+        notificationsDeleted += 1;
+      } catch (notificationError) {
+        log(
+          `Failed to delete notification ${notification.$id}: ${notificationError.message}`,
+        );
+      }
+    }
 
     return res.json(
       {
         ok: true,
-        backupId: backupDoc.$id,
-        fileId: upload.$id,
-        fileName,
+        retention: {
+          backupsDays: ENV.backupsRetentionDays,
+          notificationsDays: ENV.readNotificationsRetentionDays,
+        },
+        deleted: {
+          backups: backupsDeleted,
+          backupFiles: backupFilesDeleted,
+          notifications: notificationsDeleted,
+        },
       },
       200,
     );
