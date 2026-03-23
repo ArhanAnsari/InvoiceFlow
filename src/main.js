@@ -1,23 +1,37 @@
-import { Client, Databases, ID, Permission, Query, Role } from "node-appwrite";
+import JSZip from "jszip";
+import {
+    Client,
+    Databases,
+    ID,
+    InputFile,
+    Permission,
+    Query,
+    Role,
+    Storage,
+} from "node-appwrite";
 
 const ENV = {
   endpoint: process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1",
   projectId: process.env.APPWRITE_PROJECT_ID || "699988ac001cd0857f48",
   apiKey: process.env.APPWRITE_API_KEY || "",
   dbId: process.env.APPWRITE_DB_ID || "invoiceflow_db",
-  subscriptionsCollection:
-    process.env.COLLECTION_SUBSCRIPTIONS || "subscriptions",
-  strictReceiptValidation: process.env.STRICT_RECEIPT_VALIDATION === "true",
-  appleSharedSecret: process.env.APPLE_SHARED_SECRET || "",
+  customersCollection: process.env.COLLECTION_CUSTOMERS || "customers",
+  productsCollection: process.env.COLLECTION_PRODUCTS || "products",
+  invoicesCollection: process.env.COLLECTION_INVOICES || "invoices",
+  backupsCollection: process.env.COLLECTION_BACKUPS || "backups",
+  backupsBucket: process.env.BUCKET_BACKUPS || "backups",
 };
 
-const getDb = () => {
+const getClients = () => {
   const client = new Client()
     .setEndpoint(ENV.endpoint)
     .setProject(ENV.projectId)
     .setKey(ENV.apiKey);
 
-  return new Databases(client);
+  return {
+    db: new Databases(client),
+    storage: new Storage(client),
+  };
 };
 
 const parseJsonBody = (req) => {
@@ -31,139 +45,87 @@ const parseJsonBody = (req) => {
   }
 };
 
-const inferPlanType = (productId) => {
-  const value = String(productId || "").toLowerCase();
-  if (value.includes("enterprise")) return "enterprise";
-  if (value.includes("pro")) return "pro";
-  return "free";
-};
-
-const verifyReceipt = async ({ platform, receipt }) => {
-  if (!ENV.strictReceiptValidation) {
-    return { validated: Boolean(receipt), provider: "bypass" };
-  }
-
-  if (platform === "ios") {
-    if (!ENV.appleSharedSecret) {
-      return {
-        validated: false,
-        provider: "apple",
-        reason: "missing_shared_secret",
-      };
-    }
-
-    const response = await fetch("https://buy.itunes.apple.com/verifyReceipt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        "receipt-data": receipt,
-        password: ENV.appleSharedSecret,
-        "exclude-old-transactions": true,
-      }),
-    });
-
-    const payload = await response.json();
-    return {
-      validated: payload?.status === 0,
-      provider: "apple",
-      statusCode: payload?.status,
-    };
-  }
-
-  if (platform === "android") {
-    // Google Play validation requires service account + Android Publisher API.
-    // This function keeps strict mode deterministic until credentials are wired.
-    return {
-      validated: false,
-      provider: "google_play",
-      reason: "not_implemented",
-    };
-  }
-
-  return { validated: false, provider: "unknown_platform" };
-};
+const listByBusiness = (db, collectionId, businessId) =>
+  db.listDocuments(ENV.dbId, collectionId, [
+    Query.equal("businessId", businessId),
+    Query.limit(5000),
+  ]);
 
 export default async ({ req, res, error }) => {
   try {
-    const db = getDb();
+    const { db, storage } = getClients();
     const body = parseJsonBody(req);
 
-    const userId = String(body.userId || "");
     const businessId = String(body.businessId || "");
-    const platform = String(body.platform || "").toLowerCase();
-    const productId = String(body.productId || "");
-    const receipt = String(body.receipt || "");
+    const userId = String(body.userId || "");
 
-    if (!userId || !businessId || !platform || !productId || !receipt) {
+    if (!businessId || !userId) {
       return res.json(
-        {
-          ok: false,
-          error:
-            "Missing required fields: userId, businessId, platform, productId, receipt",
-        },
+        { ok: false, error: "Missing required fields: businessId and userId" },
         400,
       );
     }
 
-    const verification = await verifyReceipt({ platform, receipt });
+    const [customers, products, invoices] = await Promise.all([
+      listByBusiness(db, ENV.customersCollection, businessId),
+      listByBusiness(db, ENV.productsCollection, businessId),
+      listByBusiness(db, ENV.invoicesCollection, businessId),
+    ]);
 
-    const now = new Date();
-    const endDate = new Date(now);
-    endDate.setUTCDate(endDate.getUTCDate() + 30);
-
-    const payload = {
-      userId,
+    const snapshot = {
+      exportedAt: new Date().toISOString(),
       businessId,
-      planType: inferPlanType(productId),
-      status: verification.validated ? "active" : "trial",
-      startDate: now.toISOString(),
-      endDate: endDate.toISOString(),
-      platform,
-      storeProductId: productId,
-      storeTransactionId: verification.validated ? receipt.slice(0, 255) : null,
-      autoRenew: true,
-      updatedAt: now.toISOString(),
+      userId,
+      counts: {
+        customers: customers.total,
+        products: products.total,
+        invoices: invoices.total,
+      },
+      customers: customers.documents,
+      products: products.documents,
+      invoices: invoices.documents,
     };
 
-    const existing = await db.listDocuments(
-      ENV.dbId,
-      ENV.subscriptionsCollection,
-      [Query.equal("businessId", businessId), Query.limit(1)],
+    const zip = new JSZip();
+    zip.file("backup.json", JSON.stringify(snapshot, null, 2));
+
+    const zipBuffer = await zip.generateAsync({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+      compressionOptions: { level: 9 },
+    });
+
+    const fileName = `backup_${businessId}_${Date.now()}.zip`;
+    const upload = await storage.createFile(
+      ENV.backupsBucket,
+      ID.unique(),
+      InputFile.fromBuffer(zipBuffer, fileName, "application/zip"),
     );
 
-    let document;
-    if (existing.documents.length > 0) {
-      document = await db.updateDocument(
-        ENV.dbId,
-        ENV.subscriptionsCollection,
-        existing.documents[0].$id,
-        payload,
-        [
-          Permission.read(Role.user(userId)),
-          Permission.write(Role.user(userId)),
-        ],
-      );
-    } else {
-      document = await db.createDocument(
-        ENV.dbId,
-        ENV.subscriptionsCollection,
-        ID.unique(),
-        {
-          ...payload,
-          createdAt: now.toISOString(),
-        },
-        [
-          Permission.read(Role.user(userId)),
-          Permission.write(Role.user(userId)),
-        ],
-      );
-    }
+    const backupDoc = await db.createDocument(
+      ENV.dbId,
+      ENV.backupsCollection,
+      ID.unique(),
+      {
+        businessId,
+        userId,
+        fileId: upload.$id,
+        fileName,
+        fileSizeBytes: Number(upload.sizeOriginal || zipBuffer.length),
+        status: "completed",
+        type: "manual",
+        recordCounts: JSON.stringify(snapshot.counts),
+        createdAt: new Date().toISOString(),
+      },
+      [Permission.read(Role.user(userId)), Permission.write(Role.user(userId))],
+    );
 
     return res.json(
       {
         ok: true,
-        subscriptionId: document.$id,
-        verification,
+        backupId: backupDoc.$id,
+        fileId: upload.$id,
+        fileName,
       },
       200,
     );
