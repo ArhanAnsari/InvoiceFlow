@@ -2,7 +2,7 @@
   "expo": {
     "name": "InvoiceFlow",
     "slug": "InvoiceFlow",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/app-assets/ios/icons/ios-icon-1024.png",
     "scheme": "invoiceflow",
@@ -65,6 +65,12 @@
         "projectId": "ee769015-84d0-4c34-848d-69fb685533b2"
       }
     },
-    "owner": "arhanansari"
+    "owner": "arhanansari",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ee769015-84d0-4c34-848d-69fb685533b2"
+    }
   }
 }
