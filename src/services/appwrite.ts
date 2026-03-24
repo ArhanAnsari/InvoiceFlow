@@ -60,6 +60,7 @@ export const FUNCTION_IDS = {
     process.env.EXPO_PUBLIC_FUNC_BACKUP_CREATOR ?? "69bd10580032b46179b9",
   CLEANUP_OLD_DATA:
     process.env.EXPO_PUBLIC_FUNC_CLEANUP_OLD_DATA ?? "69bd13a9002cb553f5df",
+  AI_ASSISTANT: process.env.EXPO_PUBLIC_FUNC_AI_ASSISTANT ?? "69c26b730002784e57bf",
 } as const;
 
 // ─── Client ────────────────────────────────────────────────────────

@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import {
-    COLLECTIONS,
-    databases,
-    DB_ID,
-    ID,
-    Permission,
-    Query,
-    Role,
+  COLLECTIONS,
+  databases,
+  DB_ID,
+  ID,
+  Permission,
+  Query,
+  Role,
 } from "../services/appwrite";
 import db from "../services/database";
 import { Business, PlanType } from "../types";
@@ -42,7 +42,12 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
 
   fetchBusinesses: async (userId: string) => {
     // Reset initialized so the navigation guard waits for this fetch to finish.
-    set({ isLoading: true, businesses: [], currentBusiness: null, initialized: false });
+    set({
+      isLoading: true,
+      businesses: [],
+      currentBusiness: null,
+      initialized: false,
+    });
     try {
       // Fetch from Appwrite
       const response = await databases.listDocuments(
@@ -99,7 +104,12 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
   },
 
   reset: () => {
-    set({ businesses: [], currentBusiness: null, isLoading: false, initialized: false });
+    set({
+      businesses: [],
+      currentBusiness: null,
+      isLoading: false,
+      initialized: false,
+    });
   },
 
   createBusiness: async (input) => {
@@ -110,10 +120,12 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
         currency === "USD"
           ? "$"
           : currency === "EUR"
-            ? "EUR"
+            ? "€"
             : currency === "GBP"
-              ? "GBP"
-              : "Rs";
+              ? "£"
+              : currency === "INR"
+                ? "₹"
+                : "₹";
 
       const newBusiness = {
         ownerId: input.userId,

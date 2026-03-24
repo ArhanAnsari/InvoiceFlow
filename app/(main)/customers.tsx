@@ -14,14 +14,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    FlatList,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -33,6 +33,7 @@ export default function CustomersScreen() {
   const { customers, fetchCustomers, addCustomer, isLoading } =
     useCustomerStore() as any;
   const { currentBusiness } = useBusinessStore();
+  const currencySymbol = (currentBusiness as any)?.currencySymbol || "₹";
 
   const [query, setQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -146,7 +147,7 @@ export default function CustomersScreen() {
             <SearchBar
               value={query}
               onChangeText={setQuery}
-              placeholder="Search customers�"
+              placeholder="Search customers"
               dark={isDark}
             />
           </View>
@@ -206,7 +207,8 @@ export default function CustomersScreen() {
                         <>
                           <Text style={styles.balanceLabel}>Balance</Text>
                           <Text style={[styles.balance, { color: T.danger }]}>
-                            ?{item.balance.toLocaleString()}
+                            {currencySymbol}
+                            {item.balance.toLocaleString()}
                           </Text>
                         </>
                       ) : (

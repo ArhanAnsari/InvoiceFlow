@@ -13,6 +13,8 @@ export interface Product {
   price: number;
   hsnCode?: string;
   taxRate: number;
+  stock?: number;
+  lowStockThreshold?: number;
   businessId: string;
   createdAt: string;
   updatedAt: string;
@@ -28,9 +30,11 @@ const normalizeProduct = (raw: any): Product => {
     price: Number(raw?.price ?? 0),
     hsnCode: raw?.hsnCode ?? undefined,
     taxRate: Number(raw?.taxRate ?? 0),
+    stock: Number(raw?.stock ?? 0),
+    lowStockThreshold: Number(raw?.lowStockThreshold ?? 5),
     businessId: raw?.businessId,
-    createdAt: raw?.createdAt ?? raw?.$createdAt ?? now,
-    updatedAt: raw?.updatedAt ?? raw?.$updatedAt ?? now,
+    createdAt: raw?.$createdAt ?? raw?.createdAt ?? now,
+    updatedAt: raw?.$updatedAt ?? raw?.updatedAt ?? now,
     syncStatus:
       raw?.syncStatus ??
       (raw?.isSynced === 1 || raw?.isSynced === true ? "synced" : "pending"),
@@ -84,13 +88,14 @@ export const useProductStore = create<ProductState>((set, get) => ({
         // Update local DB with remote data
         for (const product of remoteProducts) {
           await db.runAsync(
-            'INSERT OR REPLACE INTO products ("$id", businessId, name, price, stock, taxRate, unit, sku, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
+            'INSERT OR REPLACE INTO products ("$id", businessId, name, price, stock, lowStockThreshold, taxRate, unit, sku, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
             [
               product.$id,
               product.businessId,
               product.name,
               product.price,
               0,
+              product.lowStockThreshold ?? 5,
               product.taxRate,
               "pcs",
               null,
@@ -137,16 +142,20 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const stock = Number((productData as any).stock ?? 0);
       const unit = (productData as any).unit ?? "pcs";
       const sku = (productData as any).sku ?? null;
+      const lowStockThreshold = Number(
+        (productData as any).lowStockThreshold ?? 5,
+      );
 
       // 1. Save locally
       await db.runAsync(
-        'INSERT INTO products ("$id", businessId, name, price, stock, taxRate, unit, sku, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
+        'INSERT INTO products ("$id", businessId, name, price, stock, lowStockThreshold, taxRate, unit, sku, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
         [
           newProduct.$id,
           newProduct.businessId,
           newProduct.name,
           newProduct.price,
           stock,
+          lowStockThreshold,
           newProduct.taxRate,
           unit,
           sku,
@@ -169,6 +178,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
         price: newProduct.price,
         taxRate: newProduct.taxRate,
         stock,
+        lowStockThreshold,
         unit,
         sku,
         hsnCode: (productData as any).hsnCode ?? undefined,
@@ -205,16 +215,20 @@ export const useProductStore = create<ProductState>((set, get) => ({
         syncStatus: "pending",
       });
 
-      const nextStock = Number((updates as any).stock ?? 0);
+      const nextStock = Number((updates as any).stock ?? existing.stock ?? 0);
       const nextUnit = String((updates as any).unit ?? "pcs");
       const nextSku = (updates as any).sku ?? null;
+      const nextLowStockThreshold = Number(
+        (updates as any).lowStockThreshold ?? existing.lowStockThreshold ?? 5,
+      );
 
       await db.runAsync(
-        'UPDATE products SET name = ?, price = ?, stock = ?, taxRate = ?, unit = ?, sku = ?, "$updatedAt" = ?, isSynced = 0 WHERE "$id" = ?',
+        'UPDATE products SET name = ?, price = ?, stock = ?, lowStockThreshold = ?, taxRate = ?, unit = ?, sku = ?, "$updatedAt" = ?, isSynced = 0 WHERE "$id" = ?',
         [
           updatedProduct.name,
           updatedProduct.price,
           nextStock,
+          nextLowStockThreshold,
           updatedProduct.taxRate,
           nextUnit,
           nextSku,
@@ -236,10 +250,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
         price: updatedProduct.price,
         taxRate: updatedProduct.taxRate,
         stock: nextStock,
+        lowStockThreshold: nextLowStockThreshold,
         unit: nextUnit,
         sku: nextSku ?? undefined,
         hsnCode: updatedProduct.hsnCode ?? undefined,
-        updatedAt,
       };
 
       await addToSyncQueue(PRODUCTS_COLLECTION_ID, id, "update", syncPayload);

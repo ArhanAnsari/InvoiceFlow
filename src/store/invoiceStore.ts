@@ -83,8 +83,8 @@ const normalizeInvoice = (raw: any): Invoice => {
     totalAmount: Number(raw?.totalAmount ?? 0),
     items: parseInvoiceItems(raw?.items),
     status: (raw?.status ?? "unpaid") as Invoice["status"],
-    createdAt: raw?.createdAt ?? raw?.$createdAt ?? now,
-    updatedAt: raw?.updatedAt ?? raw?.$updatedAt ?? now,
+    createdAt: raw?.$createdAt ?? raw?.createdAt ?? now,
+    updatedAt: raw?.$updatedAt ?? raw?.updatedAt ?? now,
     syncStatus:
       raw?.syncStatus ??
       (raw?.isSynced === 1 || raw?.isSynced === true ? "synced" : "pending"),
@@ -135,7 +135,7 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
 
         const remoteInvoices = response.documents.map(normalizeInvoice);
 
-        // Update local DB with remote data
+        // Update local DB with remote data and mark as synced
         for (const invoice of remoteInvoices) {
           await db.runAsync(
             'INSERT OR REPLACE INTO invoices ("$id", businessId, customerId, customerName, invoiceNumber, date, totalAmount, status, items, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
@@ -155,8 +155,25 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
           );
         }
 
-        // Update state with fresh data
-        set({ invoices: remoteInvoices, isLoading: false });
+        // Merge remote with local unsynced data
+        const mergedMap = new Map<string, Invoice>();
+
+        // Add remote invoices first (authoritative)
+        remoteInvoices.forEach((inv) => mergedMap.set(inv.$id, inv));
+
+        // Add local unsynced invoices (these exist locally but not yet on server)
+        parsedLocalInvoices.forEach((inv) => {
+          if (inv.syncStatus === "pending" && !mergedMap.has(inv.$id)) {
+            mergedMap.set(inv.$id, inv);
+          }
+        });
+
+        const mergedInvoices = Array.from(mergedMap.values()).sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        );
+
+        // Update state with merged data
+        set({ invoices: mergedInvoices, isLoading: false });
       } catch (remoteError) {
         console.log(
           "Could not fetch remote invoices, using local data",
@@ -232,6 +249,8 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
         businessId: newInvoice.businessId,
         customerId: newInvoice.customerId,
         customerName: newInvoice.customerName,
+        customerPhone: (invoiceData as any).customerPhone ?? undefined,
+        customerGstin: (invoiceData as any).customerGstin ?? undefined,
         invoiceNumber: newInvoice.invoiceNumber,
         invoiceDate,
         dueDate: (invoiceData as any).dueDate ?? undefined,
@@ -240,6 +259,9 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
         discountType: (invoiceData as any).discountType ?? "none",
         discountValue: Number((invoiceData as any).discountValue ?? 0),
         discountAmount: Number((invoiceData as any).discountAmount ?? 0),
+        cgstAmount: Number((invoiceData as any).cgstAmount ?? 0),
+        sgstAmount: Number((invoiceData as any).sgstAmount ?? 0),
+        igstAmount: Number((invoiceData as any).igstAmount ?? 0),
         totalTax: Number((invoiceData as any).totalTax ?? 0),
         totalAmount: newInvoice.totalAmount,
         paidAmount: Number((invoiceData as any).paidAmount ?? 0),
@@ -247,7 +269,13 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
           (invoiceData as any).balanceDue ?? newInvoice.totalAmount,
         ),
         status: newInvoice.status,
+        paymentMethod: (invoiceData as any).paymentMethod ?? undefined,
+        paymentDate: (invoiceData as any).paymentDate ?? undefined,
         notes: (invoiceData as any).notes ?? undefined,
+        termsConditions: (invoiceData as any).termsConditions ?? undefined,
+        isRecurring: Boolean((invoiceData as any).isRecurring ?? false),
+        recurringInterval: (invoiceData as any).recurringInterval ?? undefined,
+        staffId: (invoiceData as any).staffId ?? undefined,
       };
 
       await addToSyncQueue(
@@ -272,7 +300,6 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
           taxRate: normalizedItem.taxRate,
           taxAmount: normalizedItem.taxAmount,
           totalPrice: normalizedItem.totalPrice,
-          createdAt: now,
         });
       }
 
@@ -312,7 +339,6 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
 
       await addToSyncQueue(INVOICES_COLLECTION_ID, id, "update", {
         status,
-        updatedAt,
       });
 
       syncEngine.pushChanges();

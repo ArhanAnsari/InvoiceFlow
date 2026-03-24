@@ -5,22 +5,22 @@ import { GlassCard } from "@/src/components/ui/GlassCard";
 import { TabSwipeContainer } from "@/src/components/ui/TabSwipeContainer";
 import { listBackups, triggerBackup } from "@/src/services/backupService";
 import {
-  runAnalyticsCalculator,
-  runCleanupOldData,
+    runAnalyticsCalculator,
+    runCleanupOldData,
 } from "@/src/services/functionsService";
 import {
-  listNotificationsForUser,
-  markNotificationRead,
+    listNotificationsForUser,
+    markNotificationRead,
 } from "@/src/services/notificationService";
 import { subscribeToNotifications } from "@/src/services/realtimeService";
 import {
-  listMonthlyReports,
-  triggerMonthlyReportGeneration,
+    listMonthlyReports,
+    triggerMonthlyReportGeneration,
 } from "@/src/services/reportsService";
 import { getStaffRoles } from "@/src/services/staffService";
 import {
-  getSubscriptionByBusinessId,
-  validateAndSyncSubscription,
+    getSubscriptionByBusinessId,
+    validateAndSyncSubscription,
 } from "@/src/services/subscriptionService";
 import { useAuthStore } from "@/src/store/authStore";
 import { useBusinessStore } from "@/src/store/businessStore";
@@ -30,13 +30,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -477,6 +477,13 @@ export default function MoreScreen() {
             {/* Reports */}
             <Text style={styles.sectionLabel}>Reports & Data</Text>
             <GlassCard dark={isDark} noPadding style={styles.group}>
+              <MenuItem
+                icon="sparkles-outline"
+                label="AI Assistant (Gemini)"
+                subtitle="Ask insights, drafts, and action suggestions"
+                onPress={() => router.push("/(main)/ai-assistant" as any)}
+              />
+              <View style={styles.divider} />
               <MenuItem
                 icon="bar-chart-outline"
                 label="Sales Report"

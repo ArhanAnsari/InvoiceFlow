@@ -29,8 +29,8 @@ const normalizeCustomer = (raw: any): Customer => {
     address: raw?.address ?? undefined,
     gstin: raw?.gstin ?? undefined,
     businessId: raw?.businessId,
-    createdAt: raw?.createdAt ?? raw?.$createdAt ?? now,
-    updatedAt: raw?.updatedAt ?? raw?.$updatedAt ?? now,
+    createdAt: raw?.$createdAt ?? raw?.createdAt ?? now,
+    updatedAt: raw?.$updatedAt ?? raw?.updatedAt ?? now,
     syncStatus:
       raw?.syncStatus ??
       (raw?.isSynced === 1 || raw?.isSynced === true ? "synced" : "pending"),
@@ -223,7 +223,6 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
         email: updatedCustomer.email ?? undefined,
         address: updatedCustomer.address ?? undefined,
         gstin: updatedCustomer.gstin ?? undefined,
-        updatedAt,
       };
 
       await addToSyncQueue(CUSTOMERS_COLLECTION_ID, id, "update", syncPayload);

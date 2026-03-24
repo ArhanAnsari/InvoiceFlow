@@ -122,7 +122,6 @@ export default async ({ req, res, error }) => {
       storeProductId: productId,
       storeTransactionId: verification.validated ? receipt.slice(0, 255) : null,
       autoRenew: true,
-      updatedAt: now.toISOString(),
     };
 
     const existing = await db.listDocuments(
@@ -148,10 +147,7 @@ export default async ({ req, res, error }) => {
         ENV.dbId,
         ENV.subscriptionsCollection,
         ID.unique(),
-        {
-          ...payload,
-          createdAt: now.toISOString(),
-        },
+        payload,
         [
           Permission.read(Role.user(userId)),
           Permission.write(Role.user(userId)),

@@ -110,7 +110,6 @@ export default async ({ res, log, error }) => {
             totalTax: totals.totalTax,
             paidCount: totals.paidCount,
             unpaidCount: totals.unpaidCount,
-            createdAt: new Date().toISOString(),
           },
           [
             Permission.read(Role.user(String(business.ownerId || ""))),

@@ -115,7 +115,6 @@ export default async ({ req, res, error }) => {
         status: "completed",
         type: "manual",
         recordCounts: JSON.stringify(snapshot.counts),
-        createdAt: new Date().toISOString(),
       },
       [Permission.read(Role.user(userId)), Permission.write(Role.user(userId))],
     );

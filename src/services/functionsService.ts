@@ -84,3 +84,16 @@ export const runCleanupOldData = () =>
       method: ExecutionMethod.POST,
     },
   );
+
+export const runAIAssistant = (input: {
+  businessId: string;
+  prompt: string;
+  mode?: "insights" | "qa" | "draft";
+}) =>
+  executeFunction<{ ok: boolean; answer?: string; error?: string }>(
+    FUNCTION_IDS.AI_ASSISTANT,
+    input,
+    {
+      method: ExecutionMethod.POST,
+    },
+  );

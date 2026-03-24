@@ -36,8 +36,6 @@ export const inviteStaff = async (params: {
       inviteEmail: params.inviteEmail,
       inviteStatus: "pending",
       isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     },
     [
       Permission.read(Role.user(params.ownerId)),
@@ -52,5 +50,4 @@ export const updateStaffInviteStatus = async (
 ) =>
   databases.updateDocument(DB_ID, COLLECTIONS.STAFF_ROLES, documentId, {
     inviteStatus,
-    updatedAt: new Date().toISOString(),
   });

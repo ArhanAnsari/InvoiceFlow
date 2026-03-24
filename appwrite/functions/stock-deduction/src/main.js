@@ -87,7 +87,6 @@ export default async ({ req, res, log, error }) => {
 
         await db.updateDocument(ENV.dbId, ENV.productsCollection, productId, {
           stock: newStock,
-          updatedAt: new Date().toISOString(),
         });
 
         updatedProducts += 1;
@@ -107,7 +106,6 @@ export default async ({ req, res, log, error }) => {
                 title: "Low Stock Alert",
                 body: `${product.name} is running low (${newStock} ${product.unit || "pcs"} left)`,
                 isRead: false,
-                createdAt: new Date().toISOString(),
               },
               [
                 Permission.read(Role.user(userId)),

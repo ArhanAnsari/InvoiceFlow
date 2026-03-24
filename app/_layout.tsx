@@ -1,7 +1,7 @@
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider,
 } from "@react-navigation/native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -93,10 +93,36 @@ export default Sentry.wrap(function RootLayout() {
   const navTheme = isDark ? AppDarkTheme : AppLightTheme;
 
   useEffect(() => {
-    initDatabase();
-    checkSession();
-    setIsMounted(true);
-  }, []);
+    const initializeApp = async () => {
+      try {
+        await initDatabase();
+        console.log("✅ Database initialized");
+      } catch (err) {
+        console.error("❌ Database init error:", err);
+      }
+
+      try {
+        await checkSession();
+        console.log("✅ Session checked");
+      } catch (err) {
+        console.error("❌ Session check error:", err);
+      }
+
+      setIsMounted(true);
+    };
+
+    initializeApp();
+
+    // Periodically check session validity (every 5 minutes)
+    const sessionCheckInterval = setInterval(
+      () => {
+        checkSession();
+      },
+      5 * 60 * 1000,
+    );
+
+    return () => clearInterval(sessionCheckInterval);
+  }, [checkSession]);
 
   useEffect(() => {
     if (!user?.$id) return;
@@ -109,7 +135,7 @@ export default Sentry.wrap(function RootLayout() {
     if (user === null) {
       resetBusinessStore();
     }
-  }, [user?.$id]);
+  }, [user]);
 
   useEffect(() => {
     if (!currentBusiness?.$id) return;

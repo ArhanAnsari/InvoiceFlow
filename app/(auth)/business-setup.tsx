@@ -109,7 +109,7 @@ export default function BusinessSetupScreen() {
             <BrandLogo size={60} radius={18} />
             <Text style={styles.h1}>Set up your business</Text>
             <Text style={styles.subtitle}>
-              Step {step + 1} of {STEPS.length} � {STEPS[step]}
+              Step {step + 1} of {STEPS.length} {STEPS[step]}
             </Text>
           </View>
 

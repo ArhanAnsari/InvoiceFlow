@@ -13,14 +13,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -53,11 +53,16 @@ export default function CreateInvoiceScreen() {
   const { customers } = useCustomerStore() as any;
   const { products } = useProductStore() as any;
   const { createInvoice, isLoading } = useInvoiceStore() as any;
+  const currencySymbol = (currentBusiness as any)?.currencySymbol || "₹";
 
   const [customerId, setCustomerId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [notes, setNotes] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringInterval, setRecurringInterval] = useState<
+    "monthly" | "quarterly"
+  >("monthly");
   const [discountType, setDiscountType] = useState<DiscountType>(
     DiscountType.NONE,
   );
@@ -67,6 +72,9 @@ export default function CreateInvoiceScreen() {
   // Pick customer
   const [customerQuery, setCustomerQuery] = useState("");
   const [showCustomerPicker, setShowCustomerPicker] = useState(false);
+  const [productQuery, setProductQuery] = useState("");
+  const [showProductPicker, setShowProductPicker] = useState(false);
+  const [lineToUpdate, setLineToUpdate] = useState<number | null>(null);
 
   const filteredCustomers = (customers ?? []).filter(
     (c: any) =>
@@ -74,25 +82,63 @@ export default function CreateInvoiceScreen() {
       c.name.toLowerCase().includes(customerQuery.toLowerCase()),
   );
 
+  const filteredProducts = (products ?? []).filter(
+    (p: any) =>
+      !productQuery ||
+      p.name.toLowerCase().includes(productQuery.toLowerCase()),
+  );
+
   const addLine = () => {
     if (!products?.length) {
       Alert.alert("No products", "Please add products first.");
       return;
     }
-    const p = products[0];
-    const { taxAmount, totalPrice } = calcLine(1, p.price, p.taxRate);
-    setLines((prev) => [
-      ...prev,
-      {
-        productId: p.$id,
-        productName: p.name,
-        quantity: 1,
-        price: p.price,
-        taxRate: p.taxRate,
-        taxAmount,
-        totalPrice,
-      },
-    ]);
+    setLineToUpdate(null);
+    setShowProductPicker(true);
+  };
+
+  const selectProductForLine = (product: any) => {
+    if (lineToUpdate === null) {
+      const { taxAmount, totalPrice } = calcLine(
+        1,
+        product.price,
+        product.taxRate,
+      );
+      setLines((prev) => [
+        ...prev,
+        {
+          productId: product.$id,
+          productName: product.name,
+          quantity: 1,
+          price: Number(product.price ?? 0),
+          taxRate: Number(product.taxRate ?? 0),
+          taxAmount,
+          totalPrice,
+        },
+      ]);
+    } else {
+      setLines((prev) =>
+        prev.map((line, idx) => {
+          if (idx !== lineToUpdate) return line;
+          const qty = Number(line.quantity ?? 1);
+          const price = Number(product.price ?? 0);
+          const taxRate = Number(product.taxRate ?? 0);
+          const { taxAmount, totalPrice } = calcLine(qty, price, taxRate);
+          return {
+            ...line,
+            productId: product.$id,
+            productName: product.name,
+            price,
+            taxRate,
+            taxAmount,
+            totalPrice,
+          };
+        }),
+      );
+    }
+    setShowProductPicker(false);
+    setProductQuery("");
+    setLineToUpdate(null);
   };
 
   const updateLine = (
@@ -173,6 +219,8 @@ export default function CreateInvoiceScreen() {
         status: "unpaid",
         notes,
         dueDate: dueDate || undefined,
+        isRecurring,
+        recurringInterval: isRecurring ? recurringInterval : undefined,
       });
       router.back();
     } catch (e: any) {
@@ -236,7 +284,7 @@ export default function CreateInvoiceScreen() {
                   <ThemedInput
                     value={customerQuery}
                     onChangeText={setCustomerQuery}
-                    placeholder="Search customers�"
+                    placeholder="Search customers"
                     containerStyle={{ marginTop: 12, marginBottom: 4 }}
                   />
                   {filteredCustomers.slice(0, 5).map((c: any) => (
@@ -269,6 +317,40 @@ export default function CreateInvoiceScreen() {
               </Pressable>
             </View>
 
+            {showProductPicker && (
+              <GlassCard dark={isDark} style={styles.productPickerCard}>
+                <ThemedInput
+                  value={productQuery}
+                  onChangeText={setProductQuery}
+                  placeholder="Search products"
+                  containerStyle={{ marginBottom: 8 }}
+                />
+                {filteredProducts.slice(0, 8).map((p: any) => (
+                  <Pressable
+                    key={p.$id}
+                    style={styles.productOption}
+                    onPress={() => selectProductForLine(p)}
+                  >
+                    <View>
+                      <Text style={styles.productOptionName}>{p.name}</Text>
+                      <Text style={styles.productOptionPrice}>
+                        {currencySymbol}
+                        {Number(p.price ?? 0).toFixed(2)}
+                      </Text>
+                    </View>
+                    <Text style={styles.productOptionTax}>
+                      {Number(p.taxRate ?? 0)}% GST
+                    </Text>
+                  </Pressable>
+                ))}
+                {filteredProducts.length === 0 && (
+                  <Text style={styles.emptyItemsText}>
+                    No products match your search.
+                  </Text>
+                )}
+              </GlassCard>
+            )}
+
             {lines.length === 0 ? (
               <GlassCard dark={isDark} style={styles.emptyItems}>
                 <Text style={styles.emptyItemsText}>
@@ -282,13 +364,28 @@ export default function CreateInvoiceScreen() {
                     <Text style={styles.lineTitle} numberOfLines={1}>
                       {line.productName}
                     </Text>
-                    <Pressable onPress={() => removeLine(idx)} hitSlop={10}>
-                      <Ionicons
-                        name="trash-outline"
-                        size={18}
-                        color={T.danger}
-                      />
-                    </Pressable>
+                    <View style={styles.lineActions}>
+                      <Pressable
+                        onPress={() => {
+                          setLineToUpdate(idx);
+                          setShowProductPicker(true);
+                        }}
+                        hitSlop={10}
+                      >
+                        <Ionicons
+                          name="swap-horizontal-outline"
+                          size={18}
+                          color={T.primary}
+                        />
+                      </Pressable>
+                      <Pressable onPress={() => removeLine(idx)} hitSlop={10}>
+                        <Ionicons
+                          name="trash-outline"
+                          size={18}
+                          color={T.danger}
+                        />
+                      </Pressable>
+                    </View>
                   </View>
                   <View style={styles.lineRow}>
                     <ThemedInput
@@ -314,7 +411,8 @@ export default function CreateInvoiceScreen() {
                     />
                   </View>
                   <Text style={styles.lineTotal}>
-                    Total: ?{line.totalPrice.toFixed(2)}
+                    Total: {currencySymbol}
+                    {line.totalPrice.toFixed(2)}
                   </Text>
                 </GlassCard>
               ))
@@ -348,7 +446,7 @@ export default function CreateInvoiceScreen() {
                       {d === DiscountType.NONE
                         ? "None"
                         : d === DiscountType.FLAT
-                          ? "Flat ?"
+                          ? "Flat Amount"
                           : "Percent %"}
                     </Text>
                   </Pressable>
@@ -358,8 +456,8 @@ export default function CreateInvoiceScreen() {
                 <ThemedInput
                   label={
                     discountType === DiscountType.FLAT
-                      ? "Discount Amount (?)"
-                      : "Discount (%)"
+                      ? "Discount Amount"
+                      : "Discount %"
                   }
                   value={discountValue}
                   onChangeText={setDiscountValue}
@@ -383,40 +481,113 @@ export default function CreateInvoiceScreen() {
                 label="Notes"
                 value={notes}
                 onChangeText={setNotes}
-                placeholder="Optional notes for the customer�"
+                placeholder="Optional notes for the customer"
                 multiline
                 numberOfLines={2}
                 containerStyle={{ marginBottom: 0 }}
               />
             </GlassCard>
 
+            <Text style={styles.sectionLabel}>Recurring</Text>
+            <GlassCard dark={isDark}>
+              <Pressable
+                style={styles.recurringToggle}
+                onPress={() => setIsRecurring((prev) => !prev)}
+              >
+                <View>
+                  <Text style={styles.recurringTitle}>
+                    Enable recurring invoice
+                  </Text>
+                  <Text style={styles.recurringSub}>
+                    Auto-generate future invoices for this customer.
+                  </Text>
+                </View>
+                <Ionicons
+                  name={isRecurring ? "checkmark-circle" : "ellipse-outline"}
+                  size={22}
+                  color={isRecurring ? T.primary : T.textMuted}
+                />
+              </Pressable>
+
+              {isRecurring && (
+                <View style={styles.recurringRow}>
+                  <Pressable
+                    style={[
+                      styles.recurringChip,
+                      recurringInterval === "monthly" &&
+                        styles.recurringChipActive,
+                    ]}
+                    onPress={() => setRecurringInterval("monthly")}
+                  >
+                    <Text
+                      style={[
+                        styles.recurringChipText,
+                        recurringInterval === "monthly" &&
+                          styles.recurringChipTextActive,
+                      ]}
+                    >
+                      Monthly
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.recurringChip,
+                      recurringInterval === "quarterly" &&
+                        styles.recurringChipActive,
+                    ]}
+                    onPress={() => setRecurringInterval("quarterly")}
+                  >
+                    <Text
+                      style={[
+                        styles.recurringChipText,
+                        recurringInterval === "quarterly" &&
+                          styles.recurringChipTextActive,
+                      ]}
+                    >
+                      Quarterly
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+            </GlassCard>
+
             {/* Summary */}
             <GlassCard dark={isDark} style={styles.summary}>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>?{subTotal.toFixed(2)}</Text>
+                <Text style={styles.summaryValue}>
+                  {currencySymbol}
+                  {subTotal.toFixed(2)}
+                </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Tax</Text>
-                <Text style={styles.summaryValue}>?{totalTax.toFixed(2)}</Text>
+                <Text style={styles.summaryValue}>
+                  {currencySymbol}
+                  {totalTax.toFixed(2)}
+                </Text>
               </View>
               {discAmount > 0 && (
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Discount</Text>
                   <Text style={[styles.summaryValue, { color: T.success }]}>
-                    -?{discAmount.toFixed(2)}
+                    -{currencySymbol}
+                    {discAmount.toFixed(2)}
                   </Text>
                 </View>
               )}
               <View style={styles.divider} />
               <View style={styles.summaryRow}>
                 <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>?{totalAmount.toFixed(2)}</Text>
+                <Text style={styles.totalValue}>
+                  {currencySymbol}
+                  {totalAmount.toFixed(2)}
+                </Text>
               </View>
             </GlassCard>
 
             <PrimaryButton
-              label={isLoading ? "Creating�" : "Create Invoice"}
+              label={isLoading ? "Creating..." : "Create Invoice"}
               onPress={handleCreate}
               isLoading={isLoading}
               size="lg"
@@ -491,6 +662,7 @@ function createStyles(T: typeof Colors.dark) {
       alignItems: "center",
       marginBottom: 8,
     },
+    lineActions: { flexDirection: "row", alignItems: "center", gap: 10 },
     lineTitle: {
       ...Typography.label,
       color: T.text,
@@ -506,6 +678,41 @@ function createStyles(T: typeof Colors.dark) {
       marginTop: 6,
       textAlign: "right",
     },
+    productPickerCard: { marginBottom: 10 },
+    productOption: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 10,
+      borderTopWidth: 1,
+      borderTopColor: T.divider,
+    },
+    productOptionName: { fontSize: 14, color: T.text, fontWeight: "600" },
+    productOptionPrice: { fontSize: 12, color: T.textMuted, marginTop: 2 },
+    productOptionTax: { fontSize: 12, color: T.textMuted },
+    recurringToggle: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 10,
+    },
+    recurringTitle: { fontSize: 14, color: T.text, fontWeight: "600" },
+    recurringSub: { fontSize: 12, color: T.textMuted, marginTop: 3 },
+    recurringRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+    recurringChip: {
+      flex: 1,
+      borderWidth: 1.5,
+      borderColor: T.border,
+      borderRadius: Radius.md,
+      paddingVertical: 8,
+      alignItems: "center",
+    },
+    recurringChipActive: {
+      backgroundColor: T.primary,
+      borderColor: T.primary,
+    },
+    recurringChipText: { fontSize: 12, color: T.textMuted, fontWeight: "600" },
+    recurringChipTextActive: { color: "#fff" },
     discRow: { flexDirection: "row", gap: 8 },
     discChip: {
       flex: 1,

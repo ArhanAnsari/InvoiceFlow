@@ -34,6 +34,7 @@ export default function InvoicesScreen() {
   const router = useRouter();
   const { invoices, fetchInvoices, isLoading } = useInvoiceStore() as any;
   const { currentBusiness } = useBusinessStore();
+  const currencySymbol = (currentBusiness as any)?.currencySymbol || "₹";
 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
@@ -119,7 +120,7 @@ export default function InvoicesScreen() {
             <SearchBar
               value={query}
               onChangeText={setQuery}
-              placeholder="Search by name or number�"
+              placeholder="Search by name or number"
               dark={isDark}
             />
           </View>
@@ -194,7 +195,8 @@ export default function InvoicesScreen() {
                       </View>
                       <View style={styles.right}>
                         <Text style={styles.amount}>
-                          ?{parseFloat(item.totalAmount).toLocaleString()}
+                          {currencySymbol}
+                          {parseFloat(item.totalAmount).toLocaleString()}
                         </Text>
                         <StatusBadge status={statusVariant(item.status)} />
                       </View>
