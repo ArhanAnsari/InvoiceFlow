@@ -71,6 +71,11 @@ export const initDatabase = async () => {
         invoiceNumber TEXT NOT NULL,
         date TEXT NOT NULL,
         totalAmount REAL NOT NULL,
+        paidAmount REAL DEFAULT 0,
+        balanceDue REAL DEFAULT 0,
+        paymentMethod TEXT,
+        paymentDate TEXT,
+        dueDate TEXT,
         status TEXT DEFAULT 'unpaid',
         items TEXT,
         pdfUrl TEXT,
@@ -121,6 +126,14 @@ export const initDatabase = async () => {
         "$createdAt" TEXT,
         "$updatedAt" TEXT
       );
+
+      -- Onboarding Checklist Progress
+      CREATE TABLE IF NOT EXISTS onboarding_progress (
+        id TEXT PRIMARY KEY,
+        completed INTEGER DEFAULT 0,
+        completedAt TEXT,
+        updatedAt TEXT
+      );
     `);
 
     // Verify critical tables exist
@@ -150,6 +163,36 @@ export const initDatabase = async () => {
           "ALTER TABLE products ADD COLUMN lowStockThreshold INTEGER DEFAULT 5",
         );
         console.log("✅ Migration complete: lowStockThreshold column added");
+      }
+
+      // Ensure invoices table has payment/reconciliation columns
+      const invoiceColumns = await db.getAllAsync(
+        "PRAGMA table_info(invoices)",
+      );
+      const invoiceColumnNames = new Set(
+        (invoiceColumns as any[]).map((col: any) => col.name),
+      );
+
+      if (!invoiceColumnNames.has("paidAmount")) {
+        await db.execAsync(
+          "ALTER TABLE invoices ADD COLUMN paidAmount REAL DEFAULT 0",
+        );
+      }
+      if (!invoiceColumnNames.has("balanceDue")) {
+        await db.execAsync(
+          "ALTER TABLE invoices ADD COLUMN balanceDue REAL DEFAULT 0",
+        );
+      }
+      if (!invoiceColumnNames.has("paymentMethod")) {
+        await db.execAsync(
+          "ALTER TABLE invoices ADD COLUMN paymentMethod TEXT",
+        );
+      }
+      if (!invoiceColumnNames.has("paymentDate")) {
+        await db.execAsync("ALTER TABLE invoices ADD COLUMN paymentDate TEXT");
+      }
+      if (!invoiceColumnNames.has("dueDate")) {
+        await db.execAsync("ALTER TABLE invoices ADD COLUMN dueDate TEXT");
       }
     } catch (migrationError) {
       console.warn("Migration warning:", migrationError);

@@ -28,6 +28,11 @@ export interface Invoice {
   invoiceNumber: string;
   date: string;
   totalAmount: number;
+  paidAmount?: number;
+  balanceDue?: number;
+  paymentMethod?: "cash" | "upi" | "card" | "bank" | "other";
+  paymentDate?: string;
+  dueDate?: string;
   items: InvoiceItem[];
   status: "paid" | "unpaid" | "partial" | "overdue" | "cancelled";
   createdAt: string;
@@ -81,6 +86,14 @@ const normalizeInvoice = (raw: any): Invoice => {
     invoiceNumber: raw?.invoiceNumber ?? "",
     date: raw?.date ?? raw?.invoiceDate ?? raw?.$createdAt ?? now,
     totalAmount: Number(raw?.totalAmount ?? 0),
+    paidAmount: Number(raw?.paidAmount ?? 0),
+    balanceDue: Number(
+      raw?.balanceDue ??
+        Number(raw?.totalAmount ?? 0) - Number(raw?.paidAmount ?? 0),
+    ),
+    paymentMethod: raw?.paymentMethod ?? undefined,
+    paymentDate: raw?.paymentDate ?? undefined,
+    dueDate: raw?.dueDate ?? undefined,
     items: parseInvoiceItems(raw?.items),
     status: (raw?.status ?? "unpaid") as Invoice["status"],
     createdAt: raw?.$createdAt ?? raw?.createdAt ?? now,
@@ -100,6 +113,12 @@ interface InvoiceState {
     invoice: Omit<Invoice, "$id" | "createdAt" | "updatedAt" | "syncStatus">,
   ) => Promise<void>;
   updateInvoiceStatus: (id: string, status: Invoice["status"]) => Promise<void>;
+  recordPayment: (input: {
+    invoiceId: string;
+    amount: number;
+    method: "cash" | "upi" | "card" | "bank" | "other";
+    paymentDate?: string;
+  }) => Promise<void>;
 }
 
 export const useInvoiceStore = create<InvoiceState>((set, get) => ({
@@ -138,7 +157,7 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
         // Update local DB with remote data and mark as synced
         for (const invoice of remoteInvoices) {
           await db.runAsync(
-            'INSERT OR REPLACE INTO invoices ("$id", businessId, customerId, customerName, invoiceNumber, date, totalAmount, status, items, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
+            'INSERT OR REPLACE INTO invoices ("$id", businessId, customerId, customerName, invoiceNumber, date, totalAmount, paidAmount, balanceDue, paymentMethod, paymentDate, dueDate, status, items, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
             [
               invoice.$id,
               invoice.businessId,
@@ -147,6 +166,11 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
               invoice.invoiceNumber,
               invoice.date,
               invoice.totalAmount,
+              invoice.paidAmount ?? 0,
+              invoice.balanceDue ?? invoice.totalAmount,
+              invoice.paymentMethod ?? null,
+              invoice.paymentDate ?? null,
+              invoice.dueDate ?? null,
               invoice.status,
               JSON.stringify(invoice.items),
               invoice.createdAt,
@@ -222,7 +246,7 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
 
       // 1. Save locally
       await db.runAsync(
-        'INSERT INTO invoices ("$id", businessId, customerId, customerName, invoiceNumber, date, totalAmount, status, items, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
+        'INSERT INTO invoices ("$id", businessId, customerId, customerName, invoiceNumber, date, totalAmount, paidAmount, balanceDue, paymentMethod, paymentDate, dueDate, status, items, "$createdAt", "$updatedAt", isSynced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)',
         [
           newInvoice.$id,
           newInvoice.businessId,
@@ -231,6 +255,11 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
           newInvoice.invoiceNumber,
           newInvoice.date,
           newInvoice.totalAmount,
+          Number((invoiceData as any).paidAmount ?? 0),
+          Number((invoiceData as any).balanceDue ?? newInvoice.totalAmount),
+          (invoiceData as any).paymentMethod ?? null,
+          (invoiceData as any).paymentDate ?? null,
+          (invoiceData as any).dueDate ?? null,
           newInvoice.status,
           JSON.stringify(newInvoice.items),
           newInvoice.createdAt,
@@ -339,6 +368,82 @@ export const useInvoiceStore = create<InvoiceState>((set, get) => ({
 
       await addToSyncQueue(INVOICES_COLLECTION_ID, id, "update", {
         status,
+      });
+
+      syncEngine.pushChanges();
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+      throw error;
+    }
+  },
+
+  recordPayment: async ({ invoiceId, amount, method, paymentDate }) => {
+    set({ isLoading: true, error: null });
+    try {
+      const existing = get().invoices.find(
+        (invoice) => invoice.$id === invoiceId,
+      );
+      if (!existing) {
+        throw new Error("Invoice not found.");
+      }
+      if (amount <= 0) {
+        throw new Error("Payment amount must be greater than 0.");
+      }
+
+      const nextPaidAmount = Math.min(
+        Number(existing.totalAmount ?? 0),
+        Number(existing.paidAmount ?? 0) + Number(amount),
+      );
+      const nextBalanceDue = Math.max(
+        0,
+        Number(existing.totalAmount ?? 0) - nextPaidAmount,
+      );
+      const nextStatus: Invoice["status"] =
+        nextBalanceDue === 0
+          ? "paid"
+          : nextPaidAmount > 0
+            ? "partial"
+            : "unpaid";
+      const nextPaymentDate = paymentDate ?? new Date().toISOString();
+      const updatedAt = new Date().toISOString();
+
+      await db.runAsync(
+        'UPDATE invoices SET paidAmount = ?, balanceDue = ?, paymentMethod = ?, paymentDate = ?, status = ?, "$updatedAt" = ?, isSynced = 0 WHERE "$id" = ?',
+        [
+          nextPaidAmount,
+          nextBalanceDue,
+          method,
+          nextPaymentDate,
+          nextStatus,
+          updatedAt,
+          invoiceId,
+        ],
+      );
+
+      set((state) => ({
+        invoices: state.invoices.map((invoice) =>
+          invoice.$id === invoiceId
+            ? {
+                ...invoice,
+                paidAmount: nextPaidAmount,
+                balanceDue: nextBalanceDue,
+                paymentMethod: method,
+                paymentDate: nextPaymentDate,
+                status: nextStatus,
+                updatedAt,
+                syncStatus: "pending",
+              }
+            : invoice,
+        ),
+        isLoading: false,
+      }));
+
+      await addToSyncQueue(INVOICES_COLLECTION_ID, invoiceId, "update", {
+        paidAmount: nextPaidAmount,
+        balanceDue: nextBalanceDue,
+        paymentMethod: method,
+        paymentDate: nextPaymentDate,
+        status: nextStatus,
       });
 
       syncEngine.pushChanges();

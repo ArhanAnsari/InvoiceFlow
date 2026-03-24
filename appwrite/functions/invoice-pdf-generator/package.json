@@ -1,0 +1,11 @@
+{
+  "name": "invoice-pdf-generator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "node-appwrite": "^13.0.1",
+    "pdfkit": "^0.16.0",
+    "qrcode": "^1.5.4"
+  }
+}

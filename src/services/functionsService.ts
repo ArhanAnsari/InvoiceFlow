@@ -97,3 +97,69 @@ export const runAIAssistant = (input: {
       method: ExecutionMethod.POST,
     },
   );
+
+export const createPublicPaymentLink = (input: {
+  invoiceId: string;
+  businessId: string;
+  expiresInMinutes?: number;
+}) =>
+  executeFunction<{
+    ok: boolean;
+    link?: string;
+    token?: string;
+    error?: string;
+  }>(FUNCTION_IDS.PAYMENTS_ORCHESTRATOR, input, {
+    method: ExecutionMethod.POST,
+    path: "/create-link",
+  });
+
+export const getPublicInvoiceByToken = (token: string) =>
+  executeFunction<{
+    ok: boolean;
+    invoice?: any;
+    business?: any;
+    error?: string;
+  }>(FUNCTION_IDS.PAYMENTS_ORCHESTRATOR, undefined, {
+    method: ExecutionMethod.GET,
+    path: `/invoice?token=${encodeURIComponent(token)}`,
+  });
+
+export const verifyPaymentWebhook = (input: {
+  provider: "razorpay" | "phonepe" | "paytm";
+  payload: Record<string, any>;
+  signature?: string;
+}) =>
+  executeFunction<{
+    ok: boolean;
+    verified?: boolean;
+    invoiceId?: string;
+    error?: string;
+  }>(FUNCTION_IDS.PAYMENTS_ORCHESTRATOR, input, {
+    method: ExecutionMethod.POST,
+    path: "/verify-webhook",
+  });
+
+export const generateInvoicePdf = (input: {
+  invoiceId: string;
+  businessId: string;
+  paymentLink?: string;
+}) =>
+  executeFunction<{ ok: boolean; fileId?: string; error?: string }>(
+    FUNCTION_IDS.INVOICE_PDF_GENERATOR,
+    input,
+    {
+      method: ExecutionMethod.POST,
+    },
+  );
+
+export const runReminderAutomation = (input?: {
+  businessId?: string;
+  channels?: Array<"in_app" | "email" | "sms">;
+}) =>
+  executeFunction<{ ok: boolean; remindersCreated?: number; error?: string }>(
+    FUNCTION_IDS.REMINDER_AUTOMATION,
+    input ?? {},
+    {
+      method: ExecutionMethod.POST,
+    },
+  );

@@ -5,22 +5,20 @@ import { GlassCard } from "@/src/components/ui/GlassCard";
 import { TabSwipeContainer } from "@/src/components/ui/TabSwipeContainer";
 import { listBackups, triggerBackup } from "@/src/services/backupService";
 import {
-    runAnalyticsCalculator,
-    runCleanupOldData,
+  runAnalyticsCalculator,
+  runCleanupOldData,
+  runReminderAutomation,
 } from "@/src/services/functionsService";
-import {
-    listNotificationsForUser,
-    markNotificationRead,
-} from "@/src/services/notificationService";
+import { listNotificationsForUser } from "@/src/services/notificationService";
 import { subscribeToNotifications } from "@/src/services/realtimeService";
 import {
-    listMonthlyReports,
-    triggerMonthlyReportGeneration,
+  listMonthlyReports,
+  triggerMonthlyReportGeneration,
 } from "@/src/services/reportsService";
 import { getStaffRoles } from "@/src/services/staffService";
 import {
-    getSubscriptionByBusinessId,
-    validateAndSyncSubscription,
+  getSubscriptionByBusinessId,
+  validateAndSyncSubscription,
 } from "@/src/services/subscriptionService";
 import { useAuthStore } from "@/src/store/authStore";
 import { useBusinessStore } from "@/src/store/businessStore";
@@ -30,13 +28,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Alert,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -92,6 +90,19 @@ export default function MoreScreen() {
     latestReportMonth: "No reports",
     subscriptionSummary: "Not available",
   });
+  const adminEmail = String(
+    process.env.EXPO_PUBLIC_ADMIN_EMAIL || "arhanansari2009@gmail.com",
+  )
+    .trim()
+    .toLowerCase();
+  const isAdminUser =
+    (!!adminEmail &&
+      String(user?.email || "")
+        .trim()
+        .toLowerCase() === adminEmail) ||
+    (!!user?.$id &&
+      !!currentBusiness?.ownerId &&
+      String(user.$id) === String(currentBusiness.ownerId));
 
   const toggleTheme = () => {
     setThemeMode(themeMode === "dark" ? "light" : "dark");
@@ -384,33 +395,21 @@ export default function MoreScreen() {
     }
   };
 
-  const handleNotifications = async () => {
-    if (!user?.$id) return;
-
+  const handleRunSmartReminders = async () => {
     try {
       setIsWorking(true);
-      const response = await listNotificationsForUser(
-        user.$id,
-        currentBusiness?.$id,
-      );
-
-      const unread = response.documents.filter((doc: any) => !doc.isRead);
-      if (unread.length > 0) {
-        await Promise.all(
-          unread.slice(0, 20).map((doc: any) => markNotificationRead(doc.$id)),
-        );
-      }
-
+      const { data } = await runReminderAutomation({
+        businessId: currentBusiness?.$id,
+        channels: ["in_app", "email", "sms"],
+      });
       Alert.alert(
-        "Notifications",
-        unread.length > 0
-          ? `${unread.length} notification(s) marked as read.`
-          : "No unread notifications.",
+        "Smart Reminders",
+        `Reminder run complete. Notifications created: ${Number((data as any)?.remindersCreated || 0)}`,
       );
     } catch (error: any) {
       Alert.alert(
-        "Notifications",
-        error?.message ?? "Failed to fetch notifications.",
+        "Smart Reminders",
+        error?.message ?? "Failed to run reminders.",
       );
     } finally {
       setIsWorking(false);
@@ -492,6 +491,13 @@ export default function MoreScreen() {
               />
               <View style={styles.divider} />
               <MenuItem
+                icon="wallet-outline"
+                label="Payments & Reconciliation"
+                subtitle="Track partial/settled history and methods"
+                onPress={() => router.push("/(main)/payments" as any)}
+              />
+              <View style={styles.divider} />
+              <MenuItem
                 icon="download-outline"
                 label="Generate Monthly Report"
                 subtitle="Run report generation function"
@@ -511,6 +517,13 @@ export default function MoreScreen() {
                 subtitle="Run weekly cleanup now"
                 onPress={handleCleanup}
               />
+              <View style={styles.divider} />
+              <MenuItem
+                icon="notifications-circle-outline"
+                label="Run Smart Reminders"
+                subtitle="Due-date sequence templates + channels"
+                onPress={handleRunSmartReminders}
+              />
             </GlassCard>
 
             {/* Settings */}
@@ -526,9 +539,16 @@ export default function MoreScreen() {
               <View style={styles.divider} />
               <MenuItem
                 icon="notifications-outline"
-                label="Notifications"
+                label="Notification Center"
                 subtitle={`${stats.unreadNotifications} unread`}
-                onPress={handleNotifications}
+                onPress={() => router.push("/(main)/notifications" as any)}
+              />
+              <View style={styles.divider} />
+              <MenuItem
+                icon="pulse-outline"
+                label="Team Activity Timeline"
+                subtitle="Audit feed for staff and business actions"
+                onPress={() => router.push("/(main)/activity" as any)}
               />
               <View style={styles.divider} />
               <MenuItem
@@ -544,6 +564,24 @@ export default function MoreScreen() {
                   )
                 }
               />
+              <View style={styles.divider} />
+              <MenuItem
+                icon="school-outline"
+                label="Interactive Tutorial"
+                subtitle="Step-by-step guided onboarding"
+                onPress={() => router.push("/(main)/tutorial" as any)}
+              />
+              {isAdminUser ? (
+                <>
+                  <View style={styles.divider} />
+                  <MenuItem
+                    icon="shield-checkmark-outline"
+                    label="Admin Tools"
+                    subtitle="Webhook and reminder test console"
+                    onPress={() => router.push("/(main)/admin" as any)}
+                  />
+                </>
+              ) : null}
             </GlassCard>
 
             {/* Logout */}

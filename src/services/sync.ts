@@ -365,8 +365,8 @@ export const syncService = {
         for (const doc of invoices.documents) {
           await db.runAsync(
             `INSERT OR REPLACE INTO invoices
-                       ("$id", businessId, customerId, customerName, invoiceNumber, date, totalAmount, status, items, "$createdAt", "$updatedAt", isSynced)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+                       ("$id", businessId, customerId, customerName, invoiceNumber, date, totalAmount, paidAmount, balanceDue, paymentMethod, paymentDate, dueDate, status, items, "$createdAt", "$updatedAt", isSynced)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
             [
               doc.$id,
               doc.businessId,
@@ -375,6 +375,11 @@ export const syncService = {
               doc.invoiceNumber,
               doc.invoiceDate || doc.$createdAt,
               doc.totalAmount,
+              Number(doc.paidAmount ?? 0),
+              Number(doc.balanceDue ?? doc.totalAmount ?? 0),
+              doc.paymentMethod ?? null,
+              doc.paymentDate ?? null,
+              doc.dueDate ?? null,
               doc.status,
               doc.items ? JSON.stringify(doc.items) : "[]",
               doc.$createdAt,

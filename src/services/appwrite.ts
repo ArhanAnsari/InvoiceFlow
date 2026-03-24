@@ -1,14 +1,14 @@
 // src/services/appwrite.ts — InvoiceFlow v2
 import {
-    Account,
-    Client,
-    Databases,
-    Functions,
-    ID,
-    Permission,
-    Query,
-    Role,
-    Storage,
+  Account,
+  Client,
+  Databases,
+  Functions,
+  ID,
+  Permission,
+  Query,
+  Role,
+  Storage,
 } from "react-native-appwrite";
 
 // ─── Config ────────────────────────────────────────────────────────
@@ -60,7 +60,16 @@ export const FUNCTION_IDS = {
     process.env.EXPO_PUBLIC_FUNC_BACKUP_CREATOR ?? "69bd10580032b46179b9",
   CLEANUP_OLD_DATA:
     process.env.EXPO_PUBLIC_FUNC_CLEANUP_OLD_DATA ?? "69bd13a9002cb553f5df",
-  AI_ASSISTANT: process.env.EXPO_PUBLIC_FUNC_AI_ASSISTANT ?? "69c26b730002784e57bf",
+  AI_ASSISTANT:
+    process.env.EXPO_PUBLIC_FUNC_AI_ASSISTANT ?? "69c26b730002784e57bf",
+  PAYMENTS_ORCHESTRATOR:
+    process.env.EXPO_PUBLIC_FUNC_PAYMENTS_ORCHESTRATOR ??
+    "payments-orchestrator",
+  INVOICE_PDF_GENERATOR:
+    process.env.EXPO_PUBLIC_FUNC_INVOICE_PDF_GENERATOR ??
+    "invoice-pdf-generator",
+  REMINDER_AUTOMATION:
+    process.env.EXPO_PUBLIC_FUNC_REMINDER_AUTOMATION ?? "reminder-automation",
 } as const;
 
 // ─── Client ────────────────────────────────────────────────────────

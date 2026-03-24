@@ -3,7 +3,12 @@ import { useIsDark, useTheme } from "@/hooks/use-theme";
 import { Avatar } from "@/src/components/ui/Avatar";
 import { GlassCard } from "@/src/components/ui/GlassCard";
 import { StatusBadge } from "@/src/components/ui/StatusBadge";
+import {
+  createPublicPaymentLink,
+  generateInvoicePdf,
+} from "@/src/services/functionsService";
 import { listInvoiceItemsByInvoice } from "@/src/services/invoiceItemsService";
+import { useBusinessStore } from "@/src/store/businessStore";
 import { Invoice, useInvoiceStore } from "@/src/store/invoiceStore";
 import { StatusVariant } from "@/src/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,14 +16,17 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -45,8 +53,12 @@ export default function InvoiceDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { invoices, updateInvoiceStatus } = useInvoiceStore() as any;
+  const { currentBusiness } = useBusinessStore();
   const [lineItems, setLineItems] = useState<any[]>([]);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [publicPaymentLink, setPublicPaymentLink] = useState<string>("");
+  const [isLinkLoading, setIsLinkLoading] = useState(false);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
 
   const invoice = (invoices ?? []).find((inv: any) => inv.$id === id);
 
@@ -112,6 +124,106 @@ export default function InvoiceDetailScreen() {
   const totalAmount: number = invoice.totalAmount ?? 0;
   const paidAmount: number = invoice.paidAmount ?? 0;
   const balanceDue: number = invoice.balanceDue ?? totalAmount - paidAmount;
+  const currencySymbol = (currentBusiness as any)?.currencySymbol || "₹";
+  const upiId =
+    (currentBusiness as any)?.upiId ||
+    (currentBusiness as any)?.vpa ||
+    (currentBusiness as any)?.upiVpa ||
+    "";
+  const upiLink = upiId
+    ? `upi://pay?pa=${encodeURIComponent(String(upiId))}&pn=${encodeURIComponent(String(currentBusiness?.name || "InvoiceFlow"))}&am=${encodeURIComponent(balanceDue.toFixed(2))}&cu=INR&tn=${encodeURIComponent(`Invoice ${invoice.invoiceNumber}`)}`
+    : "";
+  const qrImageUri = upiLink
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}`
+    : "";
+
+  const handlePayViaUpi = async () => {
+    if (!upiLink) {
+      Alert.alert(
+        "UPI not configured",
+        "Please add your UPI ID in business profile settings.",
+      );
+      return;
+    }
+
+    const canOpen = await Linking.canOpenURL(upiLink);
+    if (!canOpen) {
+      Alert.alert(
+        "UPI app not found",
+        "Install or enable a UPI app to complete payment.",
+      );
+      return;
+    }
+
+    await Linking.openURL(upiLink);
+  };
+
+  const handleGeneratePublicPaymentLink = async () => {
+    if (!invoice?.$id || !invoice?.businessId) return;
+
+    setIsLinkLoading(true);
+    try {
+      const { data } = await createPublicPaymentLink({
+        invoiceId: String(invoice.$id),
+        businessId: String(invoice.businessId),
+      });
+
+      if (!data?.ok || !data?.link) {
+        Alert.alert(
+          "Link generation failed",
+          data?.error || "Unable to create payment link.",
+        );
+        return;
+      }
+
+      setPublicPaymentLink(data.link);
+      await Share.share({
+        title: `Payment link for ${invoice.invoiceNumber}`,
+        message: `Pay invoice ${invoice.invoiceNumber}: ${data.link}`,
+      });
+    } catch (error: any) {
+      Alert.alert(
+        "Link generation failed",
+        error?.message || "Unable to create payment link.",
+      );
+    } finally {
+      setIsLinkLoading(false);
+    }
+  };
+
+  const handleGeneratePdf = async () => {
+    if (!invoice?.$id || !invoice?.businessId) return;
+
+    setIsPdfLoading(true);
+    try {
+      const paymentLink = publicPaymentLink || undefined;
+      const { data } = await generateInvoicePdf({
+        invoiceId: String(invoice.$id),
+        businessId: String(invoice.businessId),
+        paymentLink,
+      });
+
+      if (!data?.ok || !data?.fileId) {
+        Alert.alert(
+          "PDF generation failed",
+          data?.error || "Unable to generate invoice PDF.",
+        );
+        return;
+      }
+
+      Alert.alert(
+        "PDF Ready",
+        "Invoice PDF generated and saved in Appwrite storage.",
+      );
+    } catch (error: any) {
+      Alert.alert(
+        "PDF generation failed",
+        error?.message || "Unable to generate invoice PDF.",
+      );
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
 
   return (
     <LinearGradient
@@ -202,11 +314,12 @@ export default function InvoiceDetailScreen() {
                         {item.productName}
                       </Text>
                       <Text style={styles.lineQty}>
-                        {item.quantity} × ₹
+                        {item.quantity} × {currencySymbol}
                         {parseFloat(item.price).toLocaleString()}
                       </Text>
                       <Text style={styles.lineTotal}>
-                        ₹{parseFloat(item.totalPrice).toLocaleString()}
+                        {currencySymbol}
+                        {parseFloat(item.totalPrice).toLocaleString()}
                       </Text>
                     </View>
                     {idx < items.length - 1 && <View style={styles.divider} />}
@@ -222,20 +335,23 @@ export default function InvoiceDetailScreen() {
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Subtotal</Text>
               <Text style={styles.summaryValue}>
-                ₹{subTotal.toLocaleString()}
+                {currencySymbol}
+                {subTotal.toLocaleString()}
               </Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Tax</Text>
               <Text style={styles.summaryValue}>
-                ₹{totalTax.toLocaleString()}
+                {currencySymbol}
+                {totalTax.toLocaleString()}
               </Text>
             </View>
             {discountAmount > 0 && (
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Discount</Text>
                 <Text style={[styles.summaryValue, { color: T.success }]}>
-                  -₹{discountAmount.toLocaleString()}
+                  -{currencySymbol}
+                  {discountAmount.toLocaleString()}
                 </Text>
               </View>
             )}
@@ -243,14 +359,16 @@ export default function InvoiceDetailScreen() {
             <View style={styles.summaryRow}>
               <Text style={styles.totalLabel}>Total</Text>
               <Text style={styles.totalValue}>
-                ₹{totalAmount.toLocaleString()}
+                {currencySymbol}
+                {totalAmount.toLocaleString()}
               </Text>
             </View>
             {paidAmount > 0 && (
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Paid</Text>
                 <Text style={[styles.summaryValue, { color: T.success }]}>
-                  ₹{paidAmount.toLocaleString()}
+                  {currencySymbol}
+                  {paidAmount.toLocaleString()}
                 </Text>
               </View>
             )}
@@ -260,11 +378,79 @@ export default function InvoiceDetailScreen() {
                   Balance Due
                 </Text>
                 <Text style={[styles.totalValue, { color: T.danger }]}>
-                  ₹{balanceDue.toLocaleString()}
+                  {currencySymbol}
+                  {balanceDue.toLocaleString()}
                 </Text>
               </View>
             )}
           </GlassCard>
+
+          <Text style={styles.sectionLabel}>Payment Link & PDF</Text>
+          <GlassCard dark={isDark} style={styles.actionsCard}>
+            <Pressable
+              style={styles.actionBtn}
+              onPress={handleGeneratePublicPaymentLink}
+              disabled={isLinkLoading}
+            >
+              <Ionicons name="link-outline" size={16} color="#fff" />
+              <Text style={styles.actionBtnText}>
+                {isLinkLoading
+                  ? "Generating..."
+                  : "Generate Public Payment Link"}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.actionBtn, { backgroundColor: T.success }]}
+              onPress={handleGeneratePdf}
+              disabled={isPdfLoading}
+            >
+              <Ionicons name="document-text-outline" size={16} color="#fff" />
+              <Text style={styles.actionBtnText}>
+                {isPdfLoading ? "Generating..." : "Generate PDF with QR"}
+              </Text>
+            </Pressable>
+
+            {publicPaymentLink ? (
+              <Text style={styles.publicLinkText} numberOfLines={2}>
+                {publicPaymentLink}
+              </Text>
+            ) : null}
+          </GlassCard>
+
+          {balanceDue > 0 && (
+            <>
+              <Text style={styles.sectionLabel}>UPI Payment</Text>
+              <GlassCard dark={isDark} style={styles.upiCard}>
+                {upiLink ? (
+                  <>
+                    <Text style={styles.upiText}>
+                      Scan QR or tap the button to pay {currencySymbol}
+                      {balanceDue.toLocaleString()}.
+                    </Text>
+                    <View style={styles.qrWrap}>
+                      <Image
+                        source={{ uri: qrImageUri }}
+                        style={styles.qrImage}
+                      />
+                    </View>
+                    <Pressable style={styles.payBtn} onPress={handlePayViaUpi}>
+                      <Ionicons
+                        name="phone-portrait-outline"
+                        size={16}
+                        color="#fff"
+                      />
+                      <Text style={styles.payBtnText}>Pay via UPI App</Text>
+                    </Pressable>
+                  </>
+                ) : (
+                  <Text style={styles.upiHint}>
+                    Add business UPI ID to enable invoice QR payment.
+                  </Text>
+                )}
+              </GlassCard>
+            </>
+          )}
 
           {invoice.notes ? (
             <>
@@ -368,5 +554,51 @@ function createStyles(T: typeof Colors.dark) {
     statusPillActive: { backgroundColor: T.primary, borderColor: T.primary },
     statusPillText: { fontSize: 12, color: T.textMuted, fontWeight: "600" },
     statusPillTextActive: { color: "#fff" },
+    upiCard: { alignItems: "center", gap: 10 },
+    upiText: { color: T.textSecondary, fontSize: 13, textAlign: "center" },
+    upiHint: { color: T.textMuted, fontSize: 13, textAlign: "center" },
+    qrWrap: {
+      width: 220,
+      height: 220,
+      borderRadius: 16,
+      overflow: "hidden",
+      backgroundColor: "#fff",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 8,
+    },
+    qrImage: { width: 204, height: 204, borderRadius: 8 },
+    payBtn: {
+      marginTop: 4,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 10,
+      backgroundColor: T.primary,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    payBtnText: { color: "#fff", fontWeight: "700" },
+    actionsCard: { gap: 10 },
+    actionBtn: {
+      backgroundColor: T.primary,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 11,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: 8,
+    },
+    actionBtnText: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: 13,
+    },
+    publicLinkText: {
+      color: T.textMuted,
+      fontSize: 11,
+      lineHeight: 16,
+    },
   });
 }

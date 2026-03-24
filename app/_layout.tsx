@@ -1,7 +1,7 @@
 import {
-    DarkTheme,
-    DefaultTheme,
-    ThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
 } from "@react-navigation/native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -156,17 +156,18 @@ export default Sentry.wrap(function RootLayout() {
 
     const routeSegments = segments as string[];
     const inAuthGroup = segments[0] === "(auth)";
+    const inPublicGroup = segments[0] === "(public)";
     const onBusinessSetup =
       inAuthGroup && routeSegments[1] === "business-setup";
 
-    if (!user && !inAuthGroup) {
+    if (!user && !inAuthGroup && !inPublicGroup) {
       router.replace("/(auth)/login");
       return;
     }
 
     if (!user) return;
 
-    if (!currentBusiness && !onBusinessSetup) {
+    if (!currentBusiness && !onBusinessSetup && !inPublicGroup) {
       router.replace("/(auth)/business-setup");
       return;
     }
@@ -208,6 +209,7 @@ export default Sentry.wrap(function RootLayout() {
       <Stack>
         <Stack.Screen name="(main)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(public)/pay" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       </Stack>
       <StatusBar style={isDark ? "light" : "dark"} />
