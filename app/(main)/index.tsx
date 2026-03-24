@@ -247,6 +247,79 @@ export default function DashboardScreen() {
               ))}
             </View>
 
+            {/* Explore All Sections */}
+            <Text style={styles.sectionTitle}>Explore</Text>
+            <View style={{ marginBottom: Spacing.xl }}>
+              {[
+              [
+                {
+                  icon: "people-outline",
+                  label: "Customers",
+                  route: "/(main)/customers",
+                },
+                {
+                  icon: "receipt-outline",
+                  label: "Invoices",
+                  route: "/(main)/invoices",
+                },
+                {
+                  icon: "pricetag-outline",
+                  label: "Products",
+                  route: "/(main)/products",
+                },
+                {
+                  icon: "wallet-outline",
+                  label: "Payments",
+                  route: "/(main)/payments",
+                },
+              ],
+              [
+                {
+                  icon: "notifications-outline",
+                  label: "Notifications",
+                  route: "/(main)/notifications",
+                },
+                {
+                  icon: "pulse-outline",
+                  label: "Activity",
+                  route: "/(main)/activity",
+                },
+                {
+                  icon: "sparkles-outline",
+                  label: "AI Assistant",
+                  route: "/(main)/ai-assistant",
+                },
+                {
+                  icon: "school-outline",
+                  label: "Tutorial",
+                  route: "/(main)/tutorial",
+                },
+              ],
+            ].map((row, rowIdx) => (
+              <View key={rowIdx} style={styles.exploreRow}>
+                {row.map((item) => (
+                  <Pressable
+                    key={item.label}
+                    style={({ pressed }) => [
+                      styles.exploreItem,
+                      pressed && { opacity: 0.7 },
+                    ]}
+                    onPress={() => router.push(item.route as any)}
+                  >
+                    <GlassCard dark={isDark} style={styles.exploreIconWrap}>
+                      <Ionicons
+                        name={item.icon as any}
+                        size={24}
+                        color={T.primary}
+                      />
+                    </GlassCard>
+                    <Text style={styles.exploreLabel}>{item.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ))}
+            </View>
+
             {/* Recent Invoices */}
             <View style={styles.recentHeader}>
               <Text style={styles.sectionTitle}>Recent Invoices</Text>
@@ -357,6 +430,30 @@ function createStyles(T: typeof Colors.dark) {
     },
     actionLabel: {
       fontSize: 11,
+      color: T.textSecondary,
+      textAlign: "center",
+      fontWeight: "500",
+    },
+    exploreRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: Spacing.md,
+    },
+    exploreItem: {
+      alignItems: "center",
+      flex: 1,
+    },
+    exploreIconWrap: {
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 6,
+      padding: 0,
+    },
+    exploreLabel: {
+      fontSize: 10,
       color: T.textSecondary,
       textAlign: "center",
       fontWeight: "500",
