@@ -2,7 +2,7 @@
   "expo": {
     "name": "InvoiceFlow",
     "slug": "InvoiceFlow",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/app-assets/ios/icons/ios-icon-1024.png",
     "scheme": "invoiceflow",
