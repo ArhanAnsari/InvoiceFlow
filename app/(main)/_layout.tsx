@@ -94,6 +94,16 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      {/* Hidden screens — accessible via router.push but not shown in the tab bar */}
+      <Tabs.Screen name="payments" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="activity" options={{ href: null }} />
+      <Tabs.Screen name="ai-assistant" options={{ href: null }} />
+      <Tabs.Screen name="admin" options={{ href: null }} />
+      <Tabs.Screen name="tutorial" options={{ href: null }} />
+      <Tabs.Screen name="invoices/[id]" options={{ href: null }} />
+      <Tabs.Screen name="invoices/create" options={{ href: null }} />
     </Tabs>
   );
 }
