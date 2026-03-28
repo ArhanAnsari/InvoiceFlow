@@ -1,31 +1,14 @@
-import { Client, Databases, ID, Permission, Role } from "node-appwrite";
-import crypto from "node:crypto";
+import { Client, Databases, ID, Permission, Query, Role } from "node-appwrite";
 
 const ENV = {
   endpoint: process.env.APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1",
   projectId: process.env.APPWRITE_PROJECT_ID || "699988ac001cd0857f48",
   apiKey: process.env.APPWRITE_API_KEY || "",
   dbId: process.env.APPWRITE_DB_ID || "invoiceflow_db",
-  invoicesCollection: process.env.COLLECTION_INVOICES || "invoices",
   businessesCollection: process.env.COLLECTION_BUSINESSES || "businesses",
+  invoicesCollection: process.env.COLLECTION_INVOICES || "invoices",
   notificationsCollection:
     process.env.COLLECTION_NOTIFICATIONS || "notifications",
-  paymentTokenSecret:
-    process.env.PUBLIC_PAYMENT_TOKEN_SECRET || "invoiceflow-dev-secret",
-  paymentLinkBase:
-    process.env.PUBLIC_PAYMENT_PAGE_BASE || "https://invoiceflow.app/pay",
-  razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || "",
-  phonepeSaltKey: process.env.PHONEPE_SALT_KEY || "",
-  paytmMerchantKey: process.env.PAYTM_MERCHANT_KEY || "",
-};
-
-const getDb = () => {
-  const client = new Client()
-    .setEndpoint(ENV.endpoint)
-    .setProject(ENV.projectId)
-    .setKey(ENV.apiKey);
-
-  return new Databases(client);
 };
 
 const parseBody = (req) => {
@@ -38,114 +21,106 @@ const parseBody = (req) => {
   }
 };
 
-const parseQuery = (req) => {
-  if (req?.query && typeof req.query === "object") return req.query;
-  const queryString = String(req?.queryString || "");
-  const params = new URLSearchParams(queryString);
-  return Object.fromEntries(params.entries());
+const getDb = () => {
+  const client = new Client()
+    .setEndpoint(ENV.endpoint)
+    .setProject(ENV.projectId)
+    .setKey(ENV.apiKey);
+
+  return new Databases(client);
 };
 
-const base64Url = (obj) =>
-  Buffer.from(JSON.stringify(obj)).toString("base64url");
-
-const signToken = (payload) => {
-  const header = { alg: "HS256", typ: "JWT" };
-  const encodedHeader = base64Url(header);
-  const encodedPayload = base64Url(payload);
-  const signingInput = `${encodedHeader}.${encodedPayload}`;
-  const signature = crypto
-    .createHmac("sha256", ENV.paymentTokenSecret)
-    .update(signingInput)
-    .digest("base64url");
-
-  return `${signingInput}.${signature}`;
-};
-
-const verifyToken = (token) => {
-  try {
-    const [encodedHeader, encodedPayload, signature] = String(
-      token || "",
-    ).split(".");
-    if (!encodedHeader || !encodedPayload || !signature) {
-      return { ok: false, error: "Invalid token format" };
-    }
-
-    const signingInput = `${encodedHeader}.${encodedPayload}`;
-    const expected = crypto
-      .createHmac("sha256", ENV.paymentTokenSecret)
-      .update(signingInput)
-      .digest("base64url");
-
-    if (expected !== signature) {
-      return { ok: false, error: "Signature mismatch" };
-    }
-
-    const payload = JSON.parse(
-      Buffer.from(encodedPayload, "base64url").toString("utf8"),
-    );
-    if (!payload?.exp || Date.now() > payload.exp) {
-      return { ok: false, error: "Token expired" };
-    }
-
-    return { ok: true, payload };
-  } catch {
-    return { ok: false, error: "Token parse failed" };
-  }
-};
-
-const verifyProviderSignature = ({ provider, payload, signature, rawBody }) => {
-  if (provider === "razorpay") {
-    if (!ENV.razorpayWebhookSecret) return true;
-    const digest = crypto
-      .createHmac("sha256", ENV.razorpayWebhookSecret)
-      .update(rawBody || JSON.stringify(payload || {}))
-      .digest("hex");
-    return digest === signature;
-  }
-
-  if (provider === "phonepe") {
-    if (!ENV.phonepeSaltKey) return true;
-    const digest = crypto
-      .createHash("sha256")
-      .update((rawBody || JSON.stringify(payload || {})) + ENV.phonepeSaltKey)
-      .digest("hex");
-    return digest === signature;
-  }
-
-  if (provider === "paytm") {
-    if (!ENV.paytmMerchantKey) return true;
-    const digest = crypto
-      .createHmac("sha256", ENV.paytmMerchantKey)
-      .update(rawBody || JSON.stringify(payload || {}))
-      .digest("hex");
-    return digest === signature;
-  }
-
-  return false;
-};
-
-const toAmount = (provider, payload) => {
-  const value = Number(
-    payload?.amount || payload?.txnAmount || payload?.data?.amount || 0,
+const dayDiff = (isoDate) => {
+  const today = new Date();
+  const due = new Date(isoDate);
+  const t0 = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
   );
-  if (provider === "razorpay") return value / 100;
-  if (provider === "phonepe") return value / 100;
-  return value;
+  const d0 = Date.UTC(
+    due.getUTCFullYear(),
+    due.getUTCMonth(),
+    due.getUTCDate(),
+  );
+  return Math.round((d0 - t0) / (24 * 60 * 60 * 1000));
 };
 
-const extractInvoiceId = (payload) =>
-  payload?.invoiceId ||
-  payload?.notes?.invoiceId ||
-  payload?.orderMeta?.invoiceId ||
-  payload?.body?.invoiceId ||
-  "";
+const getTemplate = (daysToDue, invoiceNumber, amount, currency) => {
+  const value = `${currency}${Number(amount || 0).toFixed(2)}`;
 
-const createNotification = async (
+  if (daysToDue === 7) {
+    return {
+      key: "due_d7",
+      title: `Invoice ${invoiceNumber} due in 7 days`,
+      body: `Friendly reminder: ${invoiceNumber} is due in 7 days for ${value}.`,
+    };
+  }
+
+  if (daysToDue === 3) {
+    return {
+      key: "due_d3",
+      title: `Invoice ${invoiceNumber} due in 3 days`,
+      body: `Reminder: ${invoiceNumber} payment of ${value} is due in 3 days.`,
+    };
+  }
+
+  if (daysToDue === 1) {
+    return {
+      key: "due_d1",
+      title: `Invoice ${invoiceNumber} due tomorrow`,
+      body: `Action needed: ${invoiceNumber} is due tomorrow for ${value}.`,
+    };
+  }
+
+  if (daysToDue === 0) {
+    return {
+      key: "due_today",
+      title: `Invoice ${invoiceNumber} due today`,
+      body: `Today is the due date for ${invoiceNumber}. Pending amount: ${value}.`,
+    };
+  }
+
+  if (daysToDue === -1) {
+    return {
+      key: "overdue_d1",
+      title: `Invoice ${invoiceNumber} is overdue by 1 day`,
+      body: `${invoiceNumber} is now overdue. Outstanding amount: ${value}.`,
+    };
+  }
+
+  if (daysToDue <= -3) {
+    return {
+      key: "overdue_d3",
+      title: `Invoice ${invoiceNumber} needs follow-up`,
+      body: `${invoiceNumber} has been overdue for multiple days. Outstanding: ${value}.`,
+    };
+  }
+
+  return null;
+};
+
+const reminderAlreadyExists = async (db, ownerId, title) => {
+  const existing = await db.listDocuments(
+    ENV.dbId,
+    ENV.notificationsCollection,
+    [
+      Query.equal("userId", String(ownerId)),
+      Query.equal("title", title),
+      Query.limit(1),
+    ],
+  );
+  return existing.total > 0;
+};
+
+const createReminderNotification = async (
   db,
-  { ownerId, businessId, invoice, amount, provider },
+  ownerId,
+  businessId,
+  template,
+  invoice,
+  channels,
 ) => {
-  if (!ownerId) return;
-
   await db.createDocument(
     ENV.dbId,
     ENV.notificationsCollection,
@@ -153,13 +128,14 @@ const createNotification = async (
     {
       userId: String(ownerId),
       businessId,
-      type: "payment_received",
-      title: "Payment auto-verified",
-      body: `Payment of ${Number(amount || 0).toFixed(2)} received for invoice ${invoice.invoiceNumber}`,
+      type: "reminder",
+      title: template.title,
+      body: template.body,
       data: JSON.stringify({
         invoiceId: invoice.$id,
         invoiceNumber: invoice.invoiceNumber,
-        provider,
+        channels,
+        templateKey: template.key,
       }),
       isRead: false,
     },
@@ -171,191 +147,85 @@ const createNotification = async (
   );
 };
 
-const createLink = async ({ req, res, db }) => {
-  const body = parseBody(req);
-  const invoiceId = String(body.invoiceId || "");
-  const businessId = String(body.businessId || "");
-  const expiresInMinutes = Math.max(
-    10,
-    Number(body.expiresInMinutes || 60 * 24 * 7),
-  );
-
-  if (!invoiceId || !businessId) {
-    return res.json(
-      { ok: false, error: "invoiceId and businessId are required" },
-      400,
-    );
-  }
-
-  const token = signToken({
-    invoiceId,
-    businessId,
-    exp: Date.now() + expiresInMinutes * 60 * 1000,
-  });
-
-  const link = `${ENV.paymentLinkBase}?token=${encodeURIComponent(token)}`;
-  return res.json({ ok: true, token, link }, 200);
-};
-
-const getInvoiceForPublicPage = async ({ req, res, db }) => {
-  const query = parseQuery(req);
-  const token = String(query.token || "");
-
-  const verified = verifyToken(token);
-  if (!verified.ok) {
-    return res.json({ ok: false, error: verified.error }, 401);
-  }
-
-  const { invoiceId, businessId } = verified.payload;
-
-  const [invoice, business] = await Promise.all([
-    db.getDocument(ENV.dbId, ENV.invoicesCollection, invoiceId),
-    db.getDocument(ENV.dbId, ENV.businessesCollection, businessId),
-  ]);
-
-  return res.json(
-    {
-      ok: true,
-      invoice: {
-        $id: invoice.$id,
-        invoiceNumber: invoice.invoiceNumber,
-        customerName: invoice.customerName,
-        totalAmount: Number(invoice.totalAmount || 0),
-        paidAmount: Number(invoice.paidAmount || 0),
-        balanceDue: Number(invoice.balanceDue || invoice.totalAmount || 0),
-        status: invoice.status,
-        dueDate: invoice.dueDate,
-        upiId: business.upiId || business.vpa || business.upiVpa || "",
-        businessName: business.name,
-      },
-      business: {
-        $id: business.$id,
-        name: business.name,
-        currencySymbol: business.currencySymbol || "₹",
-      },
-    },
-    200,
-  );
-};
-
-const verifyWebhook = async ({ req, res, db, log }) => {
-  const body = parseBody(req);
-  const provider = String(body.provider || "").toLowerCase();
-  const payload = body.payload || {};
-  const signature = String(
-    body.signature || req?.headers?.["x-signature"] || "",
-  );
-  const rawBody =
-    typeof req.body === "string"
-      ? req.body
-      : JSON.stringify(body.payload || {});
-
-  if (!["razorpay", "phonepe", "paytm"].includes(provider)) {
-    return res.json({ ok: false, error: "Unsupported provider" }, 400);
-  }
-
-  const signatureOk = verifyProviderSignature({
-    provider,
-    payload,
-    signature,
-    rawBody,
-  });
-
-  if (!signatureOk) {
-    return res.json(
-      { ok: false, verified: false, error: "Signature verification failed" },
-      401,
-    );
-  }
-
-  const invoiceId = String(extractInvoiceId(payload));
-  if (!invoiceId) {
-    return res.json(
-      { ok: false, verified: false, error: "invoiceId missing in payload" },
-      400,
-    );
-  }
-
-  const invoice = await db.getDocument(
-    ENV.dbId,
-    ENV.invoicesCollection,
-    invoiceId,
-  );
-  const amountPaid =
-    toAmount(provider, payload) ||
-    Number(invoice.balanceDue || invoice.totalAmount || 0);
-  const totalAmount = Number(invoice.totalAmount || 0);
-  const nextPaidAmount = Math.min(
-    totalAmount,
-    Number(invoice.paidAmount || 0) + amountPaid,
-  );
-  const nextBalance = Math.max(0, totalAmount - nextPaidAmount);
-  const nextStatus =
-    nextBalance <= 0 ? "paid" : nextPaidAmount > 0 ? "partial" : "unpaid";
-
-  const updated = await db.updateDocument(
-    ENV.dbId,
-    ENV.invoicesCollection,
-    invoiceId,
-    {
-      paidAmount: nextPaidAmount,
-      balanceDue: nextBalance,
-      status: nextStatus,
-      paymentMethod: provider,
-      paymentDate: new Date().toISOString(),
-    },
-  );
-
-  try {
-    const business = await db.getDocument(
-      ENV.dbId,
-      ENV.businessesCollection,
-      String(updated.businessId),
-    );
-    await createNotification(db, {
-      ownerId: business.ownerId,
-      businessId: String(updated.businessId),
-      invoice: updated,
-      amount: amountPaid,
-      provider,
-    });
-  } catch (notificationError) {
-    log(`Notification failed: ${notificationError.message}`);
-  }
-
-  return res.json(
-    {
-      ok: true,
-      verified: true,
-      invoiceId,
-      status: nextStatus,
-      balanceDue: nextBalance,
-    },
-    200,
-  );
-};
-
 export default async ({ req, res, log, error }) => {
   try {
     const db = getDb();
-    const path = String(req?.path || "/");
+    const body = parseBody(req);
+    const businessIdFilter = String(body.businessId || "");
+    const channels =
+      Array.isArray(body.channels) && body.channels.length > 0
+        ? body.channels
+        : ["in_app", "email", "sms"];
 
-    if (path.includes("/create-link")) {
-      return await createLink({ req, res, db });
+    const businessQueries = [Query.equal("isActive", true), Query.limit(200)];
+    if (businessIdFilter) {
+      businessQueries.push(Query.equal("$id", businessIdFilter));
     }
 
-    if (path.includes("/invoice")) {
-      return await getInvoiceForPublicPage({ req, res, db });
-    }
+    const businesses = await db.listDocuments(
+      ENV.dbId,
+      ENV.businessesCollection,
+      businessQueries,
+    );
 
-    if (path.includes("/verify-webhook")) {
-      return await verifyWebhook({ req, res, db, log });
+    let remindersCreated = 0;
+
+    for (const business of businesses.documents) {
+      const invoices = await db.listDocuments(
+        ENV.dbId,
+        ENV.invoicesCollection,
+        [Query.equal("businessId", String(business.$id)), Query.limit(1000)],
+      );
+
+      for (const invoice of invoices.documents) {
+        if (!invoice.dueDate) continue;
+        if (invoice.status === "paid" || invoice.status === "cancelled")
+          continue;
+
+        const diff = dayDiff(invoice.dueDate);
+        const template = getTemplate(
+          diff,
+          String(invoice.invoiceNumber || invoice.$id),
+          Number(invoice.balanceDue || invoice.totalAmount || 0),
+          String(business.currencySymbol || "₹"),
+        );
+
+        if (!template) continue;
+
+        const exists = await reminderAlreadyExists(
+          db,
+          business.ownerId,
+          template.title,
+        );
+        if (exists) continue;
+
+        if (channels.includes("in_app")) {
+          await createReminderNotification(
+            db,
+            business.ownerId,
+            business.$id,
+            template,
+            invoice,
+            channels,
+          );
+          remindersCreated += 1;
+        }
+
+        if (channels.includes("email")) {
+          log(`Email reminder queued (implement provider): ${template.title}`);
+        }
+
+        if (channels.includes("sms")) {
+          log(`SMS reminder queued (implement provider): ${template.title}`);
+        }
+      }
     }
 
     return res.json(
       {
         ok: true,
-        routes: ["/create-link", "/invoice?token=...", "/verify-webhook"],
+        remindersCreated,
+        channels,
       },
       200,
     );
